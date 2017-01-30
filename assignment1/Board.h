@@ -1,11 +1,9 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-enum class Position {
-    ILLEGAL_MOVE
-};
+#include <array>
 
-enum class Direction {
+enum Direction {
     UP,
     DOWN,
     LEFT,
@@ -13,25 +11,33 @@ enum class Direction {
     DIAGONAL_NE,
     DIAGONAL_NW,
     DIAGONAL_SE,
-    DIAGONAL_SW
+    DIAGONAL_SW,
+    MAX_DIRECTIONS
+};
+
+enum Point {
+    X,
+    Y,
+    MAX_DIMENSIONS
 };
 
 class Board {
 public:
     Board();
 
-    unsigned char& operator[](const std::string &position);
+    void print() const;
 
-    void printBoard() const;
-    Position putPiece(const std::string &position, const unsigned char c);
-    int8_t checkMove(const std::string &position, const unsigned char c);
+    char& board(const std::string& position);
+    short put(const std::string &position, const char c);
+    short checkMove(const std::string &position, const char c);
 private:
-    int8_t toNumber(const unsigned char c) const;
-    bool insideBoard(int8_t x, int8_t y);
-    const unsigned char opponent(const unsigned char c);
-    int8_t checkDirection(const Direction d, int8_t x, int8_t y, const unsigned char c);
+    bool insideBoard(short x, short y) const;
+    const char opponent(const char c) const;
 
-    unsigned char board[8][8];
+    short checkDirection(const Direction d, short x, short y, const char c) const;
+    std::array<short, MAX_DIMENSIONS> positionXY(const std::string &position) const;
+
+    char m_board[8][8];
 };
 
 #endif

@@ -1,44 +1,23 @@
-# Define the compiler and the linker. The linker must be defined since
-# the implicit rule for linking uses CC as the linker. g++ can be
-# changed to clang++.
 CXX = g++
 CC  = g++
 
-# Define preprocessor, compiler, and linker flags. Uncomment the # lines
-# if you use clang++ and wish to use libc++ instead of GNU's libstdc++.
-# -g is for debugging.
 CPPFLAGS =  -std=c++11
-CXXFLAGS =  -O2 -Wall -Wextra -Wold-style-cast -Wignored-qualifiers
-CXXFLAGS += -std=c++11
-CXXFLAGS += -g
-LDFLAGS =   -g -L.
-#LDLIBS =	-l lab1
-#CPPFLAGS += -stdlib=libc++
-#CXXFLAGS += -stdlib=libc++
-#LDFLAGS +=  -stdlib=libc++
+CXXFLAGS =  -O2 -Wall -Wextra -Wold-style-cast -std=c++11 -g
 
-# Targets
 PROGS = Search
 
-all: clean $(PROGS)
+all: $(PROGS)
 
-# Targets rely on implicit rules for compiling and linking
 Search: Search.o Board.o
 
-# Phony targets
-.PHONY: all clean
-
-# Standard clean
 clean:
 	rm -f *.o $(PROGS) *.d*
 
-# Generate dependencies in *.d files
-%.d: %.cc
+%.d: %.cpp
 	@set -e; rm -f $@; \
          $(CPP) -MM $(CPPFLAGS) $< > $@.$$$$; \
          sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
          rm -f $@.$$$$
 
-# Include the *.d files
-SRC = $(wildcard *.cc)
-include $(SRC:.cc=.d)
+SRC = $(wildcard *.cpp)
+include $(SRC:.cpp=.d)

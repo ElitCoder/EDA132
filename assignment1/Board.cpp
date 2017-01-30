@@ -1,55 +1,57 @@
 #include <iostream>
-#include <string>
 
 #include "Board.h"
 
 Board::Board() {
-    for(int8_t i = 0; i < 8; i++) {
-        for(int8_t j = 0; j < 8; j++) {
-            board[i][j] = ' ';
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            m_board[i][j] = ' ';
         }
     }
 
-    (*this)["4d"] = (*this)["5e"] = 'W';
-    (*this)["5d"] = (*this)["4e"] = 'B';
+    board("4d") = 'W';
+    board("5e") = 'W';
+    board("5d") = 'B';
+    board("4e") = 'B';
 }
 
-unsigned char& Board::operator[](const std::string &position) {
-    int8_t x = toNumber(position[0]);
-    int8_t y = toNumber(position[1]);
+char& Board::board(const std::string& position) {
+    std::array<short, MAX_DIMENSIONS> matrixPosition = positionXY(position);
 
-    return board[x][y];
+    return m_board[matrixPosition[0]][matrixPosition[1]];
 }
 
-void Board::printBoard() const {
-    for(int8_t i = 0; i < 8; i++) {
-        for(int8_t j = 0; j < 8; j++) {
-            std::cout << '|' << board[i][j];
+void Board::print() const {
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            std::cout << '|' << m_board[i][j];
         }
 
         std::cout << "|\n";
     }
 }
 
-Position Board::putPiece(const std::string &position, const unsigned char c) {
+short Board::put(const std::string &position, const char c) {
     if(checkMove(position, c) == 0) {
-        return Position::ILLEGAL_MOVE;
-    }
-
-    return Position::ILLEGAL_MOVE;
-}
-
-int8_t Board::checkMove(const std::string &position, const unsigned char c) {
-    int x = toNumber(position[0]);
-    int y = toNumber(position[1]);
-
-    std::cout << "Testing " << position << " with color " << c << '\n';
-
-    if((*this)[position] != ' ' || !insideBoard(x, y)) {
         return 0;
     }
 
-    int8_t points = checkDirection(Direction::UP, x, y, c);
+    return 0;
+}
+
+std::array<short, MAX_DIMENSIONS> Board::positionXY(const std::string &position) const {
+    return {position[0] - '1', position[1] - 'a'};
+}
+
+short Board::checkMove(const std::string &position, const char c) {
+    std::array<short, MAX_DIMENSIONS> point = positionXY(position);
+    short x = point[0], y = point[1];
+
+    if(board(position) != ' ' || !insideBoard(x, y)) {
+        return 0;
+    }
+
+    short points = checkDirection(Direction::UP, x, y, c);
     points += checkDirection(Direction::DOWN, x, y, c);
     points += checkDirection(Direction::LEFT, x, y, c);
     points += checkDirection(Direction::RIGHT, x, y, c);
@@ -61,164 +63,87 @@ int8_t Board::checkMove(const std::string &position, const unsigned char c) {
     return points;
 }
 
-int8_t Board::toNumber(const unsigned char c) const {
-    if(c >= '1' && c <= '8') {
-        return static_cast<int8_t>(c) - 49;
-    }
-
-    return static_cast<int8_t>(c) - 97;
+bool Board::insideBoard(short x, short y) const {
+    return (x >= 0 && x < 8 && y >= 0 && y < 8);
 }
 
-bool Board::insideBoard(int8_t x, int8_t y) {
-    return (x >= 1 && x <= 8 && y >= 1 && y <= 8);
+const char Board::opponent(const char c) const {
+    return c == 'W' ? 'B' : 'W';
 }
 
-const unsigned char Board::opponent(const unsigned char c) {
-    switch(c) {
-        case 'W': return 'B';
-        case 'B': return 'W';
-        default: return 'E';
-    }
+short Board::checkDirection(const Direction direction, short xDirection, short yDirection, const char color) const {
+    const char opponentColor = opponent(color);
+    bool foundMatchingColor = false;
+    short points = 0;
 
-    return 'E';
-}
+    for(short i = Direction::UP; i < Direction::MAX_DIRECTIONS; i++) {
+        if(direction != i) {
+            continue;
+        }
 
-int8_t Board::checkDirection(const Direction d, int8_t x, int8_t y, const unsigned char c) {
-    if(!insideBoard(x, y)) {
-        return 0;
-    }
+        short x = xDirection;
+        short y = yDirection;
 
-    const unsigned char op = opponent(c);
-    bool foundSelf = false;
-    int8_t points = 0;
+        while(true) {
+            switch(direction) {
+                case Direction::UP: y--;
+                    break;
 
-    if(d == Direction::UP) {
-        while(insideBoard(x, --y)) {
-            if(board[x][y] == op) {
+                case Direction::DOWN: y++;
+                    break;
+
+                case Direction::LEFT: x--;
+                    break;
+
+                case Direction::RIGHT: x++;
+                    break;
+
+                case Direction::DIAGONAL_NE:
+                    {
+                        x++;
+                        y--;
+                    break;
+                    }
+
+                case Direction::DIAGONAL_NW:
+                    {
+                        x--;
+                        y--;
+                    break;
+                    }
+
+                case Direction::DIAGONAL_SE:
+                    {
+                        x++;
+                        y++;
+                    break;
+                    }
+
+                case Direction::DIAGONAL_SW:
+                    {
+                        x--;
+                        y++;
+                    break;
+                    }
+            }
+
+            if(!insideBoard(x, y)) {
+                break;
+            }
+
+            if(m_board[x][y] == opponentColor) {
                 points++;
             }
 
-            else if(board[x][y] == c) {
+            else if(m_board[x][y] == color) {
                 return points;
             }
 
-            else if(board[x][y] == ' ') {
+            else if(m_board[x][y] == ' ') {
                 return 0;
             }
         }
     }
 
-    if(d == Direction::DOWN) {
-        while(insideBoard(x, ++y)) {
-            if(board[x][y] == op) {
-                points++;
-            }
-
-            else if(board[x][y] == c) {
-                return points;
-            }
-
-            else if(board[x][y] == ' ') {
-                return 0;
-            }
-        }
-    }
-
-    if(d == Direction::LEFT) {
-        while(insideBoard(--x, y)) {
-            if(board[x][y] == op) {
-                points++;
-            }
-
-            else if(board[x][y] == c) {
-                return points;
-            }
-
-            else if(board[x][y] == ' ') {
-                return 0;
-            }
-        }
-    }
-
-    if(d == Direction::RIGHT) {
-        while(insideBoard(++x, y)) {
-            if(board[x][y] == op) {
-                points++;
-            }
-
-            else if(board[x][y] == c) {
-                return points;
-            }
-
-            else if(board[x][y] == ' ') {
-                return 0;
-            }
-        }
-    }
-
-    if(d == Direction::DIAGONAL_SW) {
-        while(insideBoard(--x, ++y)) {
-            if(board[x][y] == op) {
-                points++;
-            }
-
-            else if(board[x][y] == c) {
-                return points;
-            }
-
-            else if(board[x][y] == ' ') {
-                return 0;
-            }
-        }
-    }
-
-    if(d == Direction::DIAGONAL_SE) {
-        while(insideBoard(++x, ++y)) {
-            if(board[x][y] == op) {
-                points++;
-            }
-
-            else if(board[x][y] == c) {
-                return points;
-            }
-
-            else if(board[x][y] == ' ') {
-                return 0;
-            }
-        }
-    }
-
-    if(d == Direction::DIAGONAL_NW) {
-        while(insideBoard(--x, --y)) {
-            if(board[x][y] == op) {
-                points++;
-            }
-
-            else if(board[x][y] == c) {
-                return points;
-            }
-
-            else if(board[x][y] == ' ') {
-                return 0;
-            }
-        }
-    }
-
-    if(d == Direction::DIAGONAL_NE) {
-        while(insideBoard(++x, --y)) {
-            if(board[x][y] == op) {
-                points++;
-            }
-
-            else if(board[x][y] == c) {
-                return points;
-            }
-
-            else if(board[x][y] == ' ') {
-                return 0;
-            }
-        }
-    }
-
-    return foundSelf ? points : 0;
+    return foundMatchingColor ? points : 0;
 }
