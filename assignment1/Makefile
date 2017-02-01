@@ -8,7 +8,7 @@ PROGS = Search
 
 all: $(PROGS)
 
-Search: Search.o Board.o
+Search: Search.o Board.o AI.o
 
 clean:
 	rm -f *.o $(PROGS) *.d*

@@ -22,32 +22,53 @@ char& Board::board(const std::string& position) {
 }
 
 void Board::print() const {
+    std::cout << "  ";
+
+    for(char i = 'a'; i <= 'h'; i++) {
+        std::cout << " " << i;
+    }
+
+    std::cout << '\n';
+
     for(short i = 0; i < 8; i++) {
+        std::cout << (i + 1) << " ";
+
         for(short j = 0; j < 8; j++) {
-            std::cout << '|' << m_board[i][j];
+            std::cout << '|' << m_board[j][i];
         }
 
         std::cout << "|\n";
     }
+
+    std::cout << '\n';
 }
 
 short Board::put(const std::string &position, const char c) {
-    if(checkMove(position, c) == 0) {
+    short points = checkMove(position, c);
+
+    if(points == 0) {
         return 0;
     }
 
-    return 0;
+    turn(position, c);
+    board(position) = c;
+
+    return points;
 }
 
 std::array<short, MAX_DIMENSIONS> Board::positionXY(const std::string &position) const {
-    return {position[0] - '1', position[1] - 'a'};
+    return {position[1] - 'a', position[0] - '1'};
 }
 
 short Board::checkMove(const std::string &position, const char c) {
     std::array<short, MAX_DIMENSIONS> point = positionXY(position);
     short x = point[0], y = point[1];
 
-    if(board(position) != ' ' || !insideBoard(x, y)) {
+    return checkMove(x, y, c);
+}
+
+short Board::checkMove(const short x, const short y, const char c) {
+    if(m_board[x][y] != ' ' || !insideBoard(x, y)) {
         return 0;
     }
 
@@ -61,6 +82,147 @@ short Board::checkMove(const std::string &position, const char c) {
     points += checkDirection(Direction::DIAGONAL_NE, x, y, c);
 
     return points;
+}
+
+short Board::countDistancePoints(char color) {
+    short whitePoints = 0, blackPoints = 0;
+
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            if(m_board[j][i] == 'W') {
+                whitePoints++;
+            }
+
+            else if(m_board[j][i] == 'B') {
+                blackPoints++;
+            }
+        }
+    }
+
+    return color == 'W'? whitePoints - blackPoints : blackPoints - whitePoints;
+}
+
+char Board::countPoints() {
+    short whitePoints = 0, blackPoints = 0;
+
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            if(m_board[j][i] == 'W') {
+                whitePoints++;
+            }
+
+            else if(m_board[j][i] == 'B') {
+                blackPoints++;
+            }
+        }
+    }
+
+    return whitePoints > blackPoints ? 'W' : 'B';
+}
+
+bool Board::win(char &color) {
+    short whitePoints = 0, blackPoints = 0;
+
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            if(m_board[j][i] != ' ') {
+                continue;
+            }
+
+            whitePoints += checkMove(j, i, 'W');
+            blackPoints += checkMove(j, i, 'B');
+        }
+    }
+
+    if(whitePoints == 0 || blackPoints == 0) {
+        color = countPoints();
+        return true;
+    }
+
+    return false;
+}
+
+void Board::turn(const std::string &position, const char c) {
+    std::array<short, MAX_DIMENSIONS> point = positionXY(position);
+    short x = point[0], y = point[1];
+
+    turnDirection(Direction::UP, x, y, c);
+    turnDirection(Direction::DOWN, x, y, c);
+    turnDirection(Direction::LEFT, x, y, c);
+    turnDirection(Direction::RIGHT, x, y, c);
+    turnDirection(Direction::DIAGONAL_NE, x, y, c);
+    turnDirection(Direction::DIAGONAL_NW, x, y, c);
+    turnDirection(Direction::DIAGONAL_SE, x, y, c);
+    turnDirection(Direction::DIAGONAL_SW, x, y, c);
+}
+
+void Board::changeDirection(const Direction direction, short &x, short &y) const {
+    switch(direction) {
+        case Direction::UP: y--;
+            break;
+
+        case Direction::DOWN: y++;
+            break;
+
+        case Direction::LEFT: x--;
+            break;
+
+        case Direction::RIGHT: x++;
+            break;
+
+        case Direction::DIAGONAL_NE:
+            {
+                x++;
+                y--;
+            break;
+            }
+
+        case Direction::DIAGONAL_NW:
+            {
+                x--;
+                y--;
+            break;
+            }
+
+        case Direction::DIAGONAL_SE:
+            {
+                x++;
+                y++;
+            break;
+            }
+
+        case Direction::DIAGONAL_SW:
+            {
+                x--;
+                y++;
+            break;
+            }
+    }
+}
+
+bool Board::turnDirection(const Direction direction, short x, short y, const char color) {
+    using std::cout;
+
+    short xNew = x;
+    short yNew = y;
+
+    changeDirection(direction, xNew, yNew);
+
+    if(m_board[xNew][yNew] == color) {
+        return true;
+    }
+
+    if(!insideBoard(xNew, yNew) || m_board[xNew][yNew] == ' ') {
+        return false;
+    }
+
+    if(turnDirection(direction, xNew, yNew, color)) {
+        m_board[xNew][yNew] = color;
+
+        return true;
+    }
+
+    return false;
 }
 
 bool Board::insideBoard(short x, short y) const {
@@ -85,47 +247,7 @@ short Board::checkDirection(const Direction direction, short xDirection, short y
         short y = yDirection;
 
         while(true) {
-            switch(direction) {
-                case Direction::UP: y--;
-                    break;
-
-                case Direction::DOWN: y++;
-                    break;
-
-                case Direction::LEFT: x--;
-                    break;
-
-                case Direction::RIGHT: x++;
-                    break;
-
-                case Direction::DIAGONAL_NE:
-                    {
-                        x++;
-                        y--;
-                    break;
-                    }
-
-                case Direction::DIAGONAL_NW:
-                    {
-                        x--;
-                        y--;
-                    break;
-                    }
-
-                case Direction::DIAGONAL_SE:
-                    {
-                        x++;
-                        y++;
-                    break;
-                    }
-
-                case Direction::DIAGONAL_SW:
-                    {
-                        x--;
-                        y++;
-                    break;
-                    }
-            }
+            changeDirection(direction, x, y);
 
             if(!insideBoard(x, y)) {
                 break;
