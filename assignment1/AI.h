@@ -3,23 +3,20 @@
 
 #include "Board.h"
 
-/*
-struct State {
-    char board[8][8];
-
-    short black;
-    short white;
-}
-*/
+enum MaxState {
+    MAX_DEPTH = 10
+};
 
 class AI {
 public:
-    void build();
+    AI(const short maxTime);
 
-    short terminalState(Board &board, const char playingColor);
-    std::string minimaxDecision(Board &board);
-    short maxValue(Board &board, const char playingColor);
-    short minValue(Board &board, const char playingColor);
+    short terminalState(Board &board, const char playingColor, short depth);
+    std::array<short, 2> minimaxDecision(Board &board, const char playingColor);
+    short maxValue(Board &board, const char playingColor, short depth);
+    short minValue(Board &board, const char playingColor, short depth);
+private:
+    short m_maxTime;
 };
 
 #endif

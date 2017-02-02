@@ -2,6 +2,7 @@
 #define BOARD_H
 
 #include <array>
+#include <vector>
 
 enum Direction {
     UP,
@@ -24,20 +25,25 @@ enum Point {
 class Board {
 public:
     Board();
+    Board(const Board &board);
 
     void print() const;
 
     char& board(const std::string& position);
     short put(const std::string &position, const char c);
+    short put(const short x, const short y, const char c);
     short checkMove(const std::string &position, const char c);
     short checkMove(const short x, const short y, const char c);
     bool win(char &color);
     short countDistancePoints(char color);
     const char opponent(const char c) const;
+    std::vector<std::array<short, 2>> getPossibleActions(const char playingColor);
+    std::array<short, MAX_DIMENSIONS> currentPoints();
+
 private:
     bool insideBoard(short x, short y) const;
-    void turn(const std::string &position, const char c);
-    bool turnDirection(const Direction direction, short x, short y, const char color);
+    void turn(const short x, const short y, const char c);
+    void turnDirection(const Direction direction, short x, short y, const char color);
     void changeDirection(const Direction direction, short &x, short &y) const;
 
     char countPoints();

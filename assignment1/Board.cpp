@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <array>
 
 #include "Board.h"
 
@@ -13,6 +15,14 @@ Board::Board() {
     board("5e") = 'W';
     board("5d") = 'B';
     board("4e") = 'B';
+}
+
+Board::Board(const Board &board) {
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            m_board[i][j] = board.m_board[i][j];
+        }
+    }
 }
 
 char& Board::board(const std::string& position) {
@@ -43,14 +53,30 @@ void Board::print() const {
     std::cout << '\n';
 }
 
+short Board::put(const short x, const short y, const char c) {
+    short points = checkMove(x, y, c);
+
+    if(points == 0) {
+        return 0;
+    }
+
+    turn(x, y, c);
+    m_board[x][y] = c;
+
+    return points;
+}
+
 short Board::put(const std::string &position, const char c) {
+    std::array<short, MAX_DIMENSIONS> point = positionXY(position);
+    short x = point[0], y = point[1];
+
     short points = checkMove(position, c);
 
     if(points == 0) {
         return 0;
     }
 
-    turn(position, c);
+    turn(x, y, c);
     board(position) = c;
 
     return points;
@@ -99,7 +125,25 @@ short Board::countDistancePoints(char color) {
         }
     }
 
-    return color == 'W'? whitePoints - blackPoints : blackPoints - whitePoints;
+    return blackPoints - whitePoints;
+}
+
+std::array<short, MAX_DIMENSIONS> Board::currentPoints() {
+    std::array<short, MAX_DIMENSIONS> points = {0, 0};
+
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            if(m_board[j][i] == 'W') {
+                points[0]++;
+            }
+
+            else if(m_board[j][i] == 'B') {
+                points[1]++;
+            }
+        }
+    }
+
+    return points;
 }
 
 char Board::countPoints() {
@@ -142,10 +186,7 @@ bool Board::win(char &color) {
     return false;
 }
 
-void Board::turn(const std::string &position, const char c) {
-    std::array<short, MAX_DIMENSIONS> point = positionXY(position);
-    short x = point[0], y = point[1];
-
+void Board::turn(const short x, const short y, const char c) {
     turnDirection(Direction::UP, x, y, c);
     turnDirection(Direction::DOWN, x, y, c);
     turnDirection(Direction::LEFT, x, y, c);
@@ -200,9 +241,35 @@ void Board::changeDirection(const Direction direction, short &x, short &y) const
     }
 }
 
-bool Board::turnDirection(const Direction direction, short x, short y, const char color) {
-    using std::cout;
+void Board::turnDirection(const Direction direction, short x, short y, const char color) {
+    std::vector<char*> turns;
+    bool turnPieces(false);
 
+    short xNew = x;
+    short yNew = y;
+
+    while(true) {
+        changeDirection(direction, xNew, yNew);
+
+        if(!insideBoard(xNew, yNew) || m_board[xNew][yNew] == ' ') {
+            break;
+        }
+
+        if(m_board[xNew][yNew] == color) {
+            turnPieces = true;
+
+            break;
+        }
+
+        turns.push_back(&m_board[xNew][yNew]);
+    }
+
+    if(turnPieces) {
+        for(char *piece : turns) {
+            *piece = color;
+        }
+    }
+/*
     short xNew = x;
     short yNew = y;
 
@@ -223,6 +290,7 @@ bool Board::turnDirection(const Direction direction, short x, short y, const cha
     }
 
     return false;
+*/
 }
 
 bool Board::insideBoard(short x, short y) const {
@@ -268,4 +336,24 @@ short Board::checkDirection(const Direction direction, short xDirection, short y
     }
 
     return foundMatchingColor ? points : 0;
+}
+
+std::vector<std::array<short, 2>> Board::getPossibleActions(const char playingColor) {
+    std::vector<std::array<short, 2>> actions;
+
+    for(short i = 0; i < 8; i++) {
+        for(short j = 0; j < 8; j++) {
+            if(m_board[j][i] != ' ') {
+                continue;
+            }
+
+            short points = checkMove(j, i, playingColor);
+
+            if(points > 0) {
+                actions.push_back({j, i});
+            }
+        }
+    }
+
+    return actions;
 }
