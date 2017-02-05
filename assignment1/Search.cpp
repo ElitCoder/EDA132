@@ -3,22 +3,30 @@
 #include "AI.h"
 #include "Board.h"
 
+using action_vector_t = std::vector<std::array<short, 2>>;
+
 void win(const char winner, const short white, const short black) {
     std::cout << "Points\nW: " << white << "\nB: " << black << "\n\n";
-    
+
     if(winner == 'W') {
         std::cout << "Congratulations, you won!\n";
     }
 
     else {
-        std::cout << "Too bad motherfucker, Skynet is next!\n";
+        std::cout << "You lost, Skynet is next!\n";
     }
+}
+
+void printPoints(std::array<short, 2> &currentPoints) {
+    std::cout << "      W: " << currentPoints[0] << " B: " << currentPoints[1] << '\n';
 }
 
 void game(AI &ai) {
     Board board;
 
     while(true) {
+        auto currentPoints = board.currentPoints();
+        printPoints(currentPoints);
         board.print();
 
         char winColor;
@@ -32,41 +40,52 @@ void game(AI &ai) {
             break;
         }
 
-        short points(0);
+        action_vector_t whiteActions = board.getPossibleActions('W');
 
-        while(points == 0) {
-            std::cout << "White (e.g \"6d\"): ";
+        if(whiteActions.size() != 0) {
+            short points(0);
 
-            std::string input;
-            std::cin >> input;
+            while(points == 0) {
+                std::cout << "White (e.g \"6d\"): ";
 
-            points = board.put(input, 'W');
+                std::string input;
+                std::cin >> input;
 
-            if(points == 0) {
-                std::cout << "Illegal move, try again\n";
+                points = board.put(input, 'W');
 
-                continue;
+                if(points == 0) {
+                    std::cout << "Illegal move, try again\n";
+
+                    continue;
+                }
+
+                std::cout << "Well played, " << points << " point(s) awarded!\n\n";
             }
 
-            std::cout << "Well played, " << points << " point(s) awarded!\n\n";
+            currentPoints = board.currentPoints();
+            printPoints(currentPoints);
+            board.print();
+
+            winning = board.win(winColor);
+
+            if(winning) {
+                auto points = board.currentPoints();
+
+                win(winColor, points[0], points[1]);
+
+                break;
+            }
         }
 
-        board.print();
-
-        //WIN
-        winning = board.win(winColor);
-
-        if(winning) {
-            auto points = board.currentPoints();
-
-            win(winColor, points[0], points[1]);
-
-            break;
-        }
-
+        auto startClock = std::chrono::system_clock::now();
         std::array<short, MAX_DIMENSIONS> action = ai.minimaxDecision(board, 'B');
+        std::chrono::duration<double, std::milli> duration = std::chrono::system_clock::now() - startClock;
 
-        points = board.put(action[0], action[1], 'B');
+        if(action[0] == -1 && action[1] == -1) {
+            continue;
+        }
+
+        short points = board.put(action[0], action[1], 'B');
 
         if(points <= 0) {
             std::cout << "Error, AI calculated illegal move with (x, y) " << action[0] << ", " << action[1] << "\n\n";
@@ -74,7 +93,7 @@ void game(AI &ai) {
             continue;
         }
 
-        std::cout << "Computer played " << points << " point(s)\n\n";
+        std::cout << "Computer played " << points << " point(s) (Used time: " << duration.count() / 1000 << "s)\n\n";
     }
 }
 

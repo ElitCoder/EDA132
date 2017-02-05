@@ -35,7 +35,7 @@ public:
     short checkMove(const std::string &position, const char c);
     short checkMove(const short x, const short y, const char c);
     bool win(char &color);
-    short countDistancePoints(char color);
+    short countDistancePoints();
     const char opponent(const char c) const;
     std::vector<std::array<short, 2>> getPossibleActions(const char playingColor);
     std::array<short, MAX_DIMENSIONS> currentPoints();

@@ -110,7 +110,7 @@ short Board::checkMove(const short x, const short y, const char c) {
     return points;
 }
 
-short Board::countDistancePoints(char color) {
+short Board::countDistancePoints() {
     short whitePoints = 0, blackPoints = 0;
 
     for(short i = 0; i < 8; i++) {
@@ -178,7 +178,7 @@ bool Board::win(char &color) {
         }
     }
 
-    if(whitePoints == 0 || blackPoints == 0) {
+    if(whitePoints == 0 && blackPoints == 0) {
         color = countPoints();
         return true;
     }
@@ -269,28 +269,6 @@ void Board::turnDirection(const Direction direction, short x, short y, const cha
             *piece = color;
         }
     }
-/*
-    short xNew = x;
-    short yNew = y;
-
-    changeDirection(direction, xNew, yNew);
-
-    if(m_board[xNew][yNew] == color) {
-        return true;
-    }
-
-    if(!insideBoard(xNew, yNew) || m_board[xNew][yNew] == ' ') {
-        return false;
-    }
-
-    if(turnDirection(direction, xNew, yNew, color)) {
-        m_board[xNew][yNew] = color;
-
-        return true;
-    }
-
-    return false;
-*/
 }
 
 bool Board::insideBoard(short x, short y) const {
