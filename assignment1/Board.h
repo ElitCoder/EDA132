@@ -30,15 +30,16 @@ public:
     void print() const;
 
     char& board(const std::string& position);
+    const char& board(const std::string& position) const;
     short put(const std::string &position, const char c);
     short put(const short x, const short y, const char c);
-    short checkMove(const std::string &position, const char c);
-    short checkMove(const short x, const short y, const char c);
-    bool win(char &color);
-    short countDistancePoints();
-    const char opponent(const char c) const;
-    std::vector<std::array<short, 2>> getPossibleActions(const char playingColor);
-    std::array<short, MAX_DIMENSIONS> currentPoints();
+    short checkMove(const std::string &position, const char c) const;
+    short checkMove(const short x, const short y, const char c) const;
+    bool win(char &color) const;
+    short countDistancePoints() const;
+    char opponent(const char c) const;
+    std::vector<std::array<short, 2>> getPossibleActions(const char playingColor) const;
+    std::array<short, MAX_DIMENSIONS> currentPoints() const;
 
 private:
     bool insideBoard(short x, short y) const;
@@ -46,7 +47,7 @@ private:
     void turnDirection(const Direction direction, short x, short y, const char color);
     void changeDirection(const Direction direction, short &x, short &y) const;
 
-    char countPoints();
+    char countPoints() const;
     short checkDirection(const Direction d, short x, short y, const char c) const;
     std::array<short, MAX_DIMENSIONS> positionXY(const std::string &position) const;
 

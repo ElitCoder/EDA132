@@ -53,19 +53,25 @@ bool AI::timeout() {
     return false;
 }
 
-short AI::terminalState(Board &board, const char playingColor, short depth) {
+short AI::terminalState(Board &board, short depth, Minimax type) {
     char color;
     bool win(board.win(color));
 
-    if(win || depth >= MAX_DEPTH || timeout()) {
-        return board.countDistancePoints();
+    if((win || depth >= MAX_DEPTH || timeout()) && type == Minimax::MIN) {
+        short finalPoints = board.countDistancePoints();
+
+        if(win) {
+            finalPoints += finalPoints < 0 ? -100 : 100;
+        }
+
+        return finalPoints;
     }
 
     return SHRT_MIN;
 }
 
 short AI::maxValue(Board &board, const char playingColor, short depth, short alpha, short beta) {
-    short utility = terminalState(board, playingColor, depth);
+    short utility = terminalState(board, depth, Minimax::MAX);
 
     if(utility > SHRT_MIN) {
         return utility;
@@ -86,11 +92,11 @@ short AI::maxValue(Board &board, const char playingColor, short depth, short alp
             continue;
         }
 
-        short points = minValue(temp, temp.opponent(playingColor), ++depth, alpha, beta);
+        short distancePoints = minValue(temp, temp.opponent(playingColor), ++depth, alpha, beta);
 
-        short distancePoints = temp.countDistancePoints();
+        //short distancePoints = temp.countDistancePoints();
 
-        if(points > bestPoints) {
+        if(distancePoints > bestPoints) {
             bestAction = action;
             bestPoints = distancePoints;
         }
@@ -106,7 +112,7 @@ short AI::maxValue(Board &board, const char playingColor, short depth, short alp
 }
 
 short AI::minValue(Board &board, const char playingColor, short depth, short alpha, short beta) {
-    short utility = terminalState(board, playingColor, depth);
+    short utility = terminalState(board, depth, Minimax::MIN);
 
     if(utility > SHRT_MIN) {
         return utility;
@@ -129,9 +135,9 @@ short AI::minValue(Board &board, const char playingColor, short depth, short alp
             continue;
         }
 
-        short points = maxValue(temp, temp.opponent(playingColor), ++depth, alpha, beta);
+        short distancePoints = maxValue(temp, temp.opponent(playingColor), ++depth, alpha, beta);
 
-        short distancePoints = temp.countDistancePoints();
+        //short distancePoints = temp.countDistancePoints();
 
         if(distancePoints < bestPoints) {
             bestAction = action;

@@ -6,14 +6,19 @@
 #include <chrono>
 
 enum MaxState {
-    MAX_DEPTH = 15
+    MAX_DEPTH = 10
+};
+
+enum class Minimax {
+    MAX,
+    MIN
 };
 
 class AI {
 public:
     AI(const short maxTime);
 
-    short terminalState(Board &board, const char playingColor, short depth);
+    short terminalState(Board &board, short depth, Minimax type);
     std::array<short, 2> minimaxDecision(Board &board, const char playingColor);
     short maxValue(Board &board, const char playingColor, short depth, short alpha, short beta);
     short minValue(Board &board, const char playingColor, short depth, short alpha, short beta);
