@@ -6,7 +6,7 @@
 #include <chrono>
 
 enum MaxState {
-    MAX_DEPTH = 10
+    MAX_DEPTH = 12
 };
 
 enum class Minimax {
