@@ -5,13 +5,14 @@ import arrayhandler as ah
 
 filename = "data/weather.arff"
 CONST_TAB = "    "
-
+CONST_YES = 'yes'
+CONST_NO = 'no'
+number_list = ['real', 'integer', 'double']
 #TODO
-#classes, not only yes/no
+#classes, not only yes/no - Think this is fixed!
 #? - how to use it
 #plurality_value
 #handle real_values
-#TABS
 #ArrayHandler for clarification
 
 def parser(filename_input):
@@ -31,19 +32,20 @@ def parser(filename_input):
                 example = re.split(',', line[:len(line)-1])
                 data.append(example)
                 insert_values(attribute_values, example, attributes)
+
     return attributes, data, attribute_values
 
 def insert_values(attribute_values, example, attributes):
-    truth = ah.get_class_of_example(example)
+    classification = example[len(example)-1]
 
     for x in range(0,len(example)-1):
         temp = example[x]
-        attribute_values[x][attributes[x][0]][truth] += 1
+        attribute_values[x][attributes[x][0]][classification] += 1
 
         if not is_int(temp):
-            attribute_values[x][temp][truth] +=1
+            attribute_values[x][temp][classification] +=1
         else:
-            attribute_values[x]['real'][truth] += 1
+            attribute_values[x]['real'][classification] += 1
 
 def is_int(s):
     try:
@@ -55,7 +57,7 @@ def is_int(s):
 def create_dict(attribute_list):
     temp = {}
     for attribute in attribute_list:
-        temp[attribute] = {'yes': 0, 'no': 0}
+        temp[attribute] = {CONST_YES: 0, CONST_NO: 0}
     return temp
 
 def retrieve_values(attribute):
@@ -66,27 +68,27 @@ def retrieve_values(attribute):
 
 def decision_tree_learning(attributes, examples, attribute_values, parent_examples = None):
     if len(examples) == 0:
-        return plurality_value(parent_examples, attributes)
+        return plurality_value(parent_examples)
     elif all_same_classification(examples):
         return classification(examples)
     elif len(attributes) == 0:
-        return plurality_value(examples, attributes)
+        return plurality_value(examples)
     else:
         #Value
-        A = -1
+        A_value = -1
         #Index
         A_index = -1
 
         for attribute in attributes:
             importance_val = importance(attributes, attribute, attribute_values)
-            if importance_val > A:
+            if importance_val > A_value:
                 A_index = attribute
-                A = importance_val
+                A_value = importance_val
         temp = attributes[A_index]
 
         tree = {}
         tree[temp[0]] = {}
-        #exs = []
+
         for k in range(1,len(temp)):
             exs = get_examples(examples, A_index, temp[k])
             attr = get_attributes(attributes, A_index)
@@ -103,7 +105,7 @@ def get_examples(examples, A_index, attribute):
 
 def get_np(attribute, attributes_index, attribute_values):
     temp = attribute_values[attributes_index][attributes[attributes_index][0]]
-    return temp['yes'], temp['no']
+    return temp[CONST_YES], temp[CONST_NO]
 
 def importance(attribute, attributes_index, attribute_values):
     p, n = get_np(attribute, attributes_index, attribute_values)
@@ -122,13 +124,13 @@ def get_attributes(attributes, A_index):
 def remainder(attributes, attributes_index, attribute_values):
     toreturn = 0
     temp = attribute_values[attributes_index][attributes[attributes_index][0]]
-    p = temp['yes']
-    n = temp['no']
+    p = temp[CONST_YES]
+    n = temp[CONST_NO]
 
     for k in range(1,len(attributes[attributes_index])):
         temp = attribute_values[attributes_index][attributes[attributes_index][k]]
-        pk = temp['yes']
-        nk = temp['no']
+        pk = temp[CONST_YES]
+        nk = temp[CONST_NO]
         if nk == 0 or pk == 0:
             continue
         div = float(pk)/(nk+pk)
@@ -141,19 +143,12 @@ def B_func(q):
     p = 1-q
     return -((q*math.log(q,2))+(p*math.log(p,2)))
 
-def plurality_value(examples, attributes):
-    for attribute_index in attributes:
-        temp_list = attributes[attribute_index]
-        if temp_list[1] == 'real':
-            return 'yes'
-        else:
-            return 'Hello'
-    #    for values in range(1,len(temp_list)):
-    #
-    #        for example in examples:
-    #            if (example[attribute_index] ==
-
-    return False
+def plurality_value(examples):
+    #According to http://stackoverflow.com/questions/15643055/what-is-plurality-classification-in-decision-trees
+    number_yes = 0
+    for example in examples:
+        number_yes += example[-1].count(CONST_YES)
+    return CONST_YES if (number_yes >= (len(examples)/float(2))) else CONST_NO
 
 def classification(examples):
     return examples[0][-1]
@@ -169,14 +164,13 @@ def all_same_classification(examples):
 #Builds a string
 def print_tree(tree, depth = ''):
     tree_string = ""
-    if(tree == 'no' or tree == 'yes'):
+    if(tree == CONST_NO or tree == CONST_YES):
         return ' : %s\n' % tree
-    for k in tree:
+    for attribute in tree:
         tree_string = tree_string + "\n"
-        for value in tree[k]:
-            tree_string = tree_string+ depth +  k + " = " + value
-            tree_string = tree_string + print_tree(tree[k][value], depth + CONST_TAB)
-            print(tree[k][value])
+        for value in tree[attribute]:
+            tree_string = tree_string + depth +  attribute + " = " + value
+            tree_string = tree_string + print_tree(tree[attribute][value], depth + CONST_TAB)
     return tree_string
 
 def debug_print(attributes, attribute_values, examples):
@@ -188,7 +182,8 @@ def debug_print(attributes, attribute_values, examples):
 
 if __name__ == '__main__':
     attributes, examples, attribute_values = parser(filename)
-    del attributes[len(attributes)-1]
+    ah.remove_class_attribute(attributes)
+
     #debug_print(attributes, attribute_values, examples)
     tree = decision_tree_learning(attributes, examples, attribute_values)
     #print(tree)
