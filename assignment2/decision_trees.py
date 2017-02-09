@@ -15,28 +15,38 @@ def parser(filename_input):
             if(line[:2] == "@a"):
                 attribute = re.split(' ', line[11:])
                 attributes[i] = retrieve_values(attribute)
-
-                #attributes[attribute[0]] = retrieve_values(attribute)
-                attribute_values[i] = [0]*((len(attributes[i])-1)*2)
+                attribute_values[i] = create_dict(attributes[i])
                 i += 1
             elif(line[:1] != "@" and line != "\n"):
                 value_list = re.split(',', line[:len(line)-1])
                 data.append(value_list)
-
-                index_to_add = decision_index(value_list[len(value_list)-1])
-
-                #connect_values(attribute_values, data, index_to_add)
-
+                insert_values(attribute_values, value_list, attributes)
     return attributes, data, attribute_values
 
-def connect_values(attribute_values, data, index_to_add):
-    for
-        index = attribute_values.index()
+def insert_values(attribute_values, value_list, attributes):
+    truth = value_list[len(value_list)-1]
 
-def decision_index(input):
-    if input == 'yes':
-        return 0
-    return 1
+    for x in range(0,len(value_list)-1):
+        temp = value_list[x]
+        attribute_values[x][attributes[x][0]][truth] += 1
+
+        if not is_int(temp):
+            attribute_values[x][temp][truth] +=1
+        else:
+            attribute_values[x]['real'][truth] += 1
+
+def is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+def create_dict(attribute_list):
+    temp = {}
+    for attribute in attribute_list:
+        temp[attribute] = {'yes': 0, 'no': 0}
+    return temp
 
 def retrieve_values(attribute):
     values = []
