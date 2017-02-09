@@ -4,6 +4,12 @@ import copy
 
 filename = "data/weather.arff"
 
+#TODO
+#classes, not only yes/no
+#? - how to use it
+#plurality_value
+#handle real_values
+#TABS
 
 def parser(filename_input):
     attributes = {}
@@ -57,11 +63,11 @@ def retrieve_values(attribute):
 
 def decision_tree_learning(attributes, examples, attribute_values, parent_examples = None):
     if len(examples) == 0:
-        return plurality_value(parent_examples)
+        return plurality_value(parent_examples, attributes)
     elif all_same_classification(examples):
         return classification(examples)
     elif len(attributes) == 0:
-        return plurality_value(examples)
+        return plurality_value(examples, attributes)
     else:
         #Value
         A = -1
@@ -132,7 +138,18 @@ def B_func(q):
     p = 1-q
     return -((q*math.log(q,2))+(p*math.log(p,2)))
 
-def plurality_value(examples):
+def plurality_value(examples, attributes):
+    for attribute_index in attributes:
+        temp_list = attributes[attribute_index]
+        if temp_list[1] == 'real':
+            return 'yes'
+        else:
+            return 'Hello'
+    #    for values in range(1,len(temp_list)):
+    #        
+    #        for example in examples:
+    #            if (example[attribute_index] == 
+    
     return False
 
 def classification(examples):
@@ -145,16 +162,31 @@ def all_same_classification(examples):
             return False
     return True
 
-def print_tree(tree):
-    return None
+#Builds a string
+def print_tree(tree, depth = ''):
+    tree_string = ""
 
-if __name__ == '__main__':
-    attributes, examples, attribute_values = parser(filename)
-    del attributes[len(attributes)-1]
-    tree = decision_tree_learning(attributes, examples, attribute_values)
-    
+    if(tree == 'no' or tree == 'yes'):
+        return ' : %s\n' % tree
+
+    for k in tree:
+        for value in tree[k]:
+            tree_string = "\n" + depth + tree_string + k + " = " + value
+            
+            tree_string = tree_string + print_tree(tree[k][value], depth + '  ')
+
+    return tree_string
+def help_print(attributes, attribute_values, examples):
     print("\nAttributes: \n%s" % attributes)
     print('----')
     print("Attribute-values: \n%s" % attribute_values)
     print('----')
     print("Examples: \n%s" % examples)
+    
+if __name__ == '__main__':
+    attributes, examples, attribute_values = parser(filename)
+    del attributes[len(attributes)-1]
+    #help_print(attributes, attribute_values, examples)
+    tree = decision_tree_learning(attributes, examples, attribute_values)
+    #print(tree)
+    print(print_tree(tree))
