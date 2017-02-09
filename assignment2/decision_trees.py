@@ -1,5 +1,6 @@
 import re
 import math
+import copy
 
 filename = "data/weather.arff"
 
@@ -54,50 +55,106 @@ def retrieve_values(attribute):
         values.append(re.search('\w+', attribute[x]).group())
     return values
 
-def decision_tree_learning(examples, attributes, parent_examples = None):
+def decision_tree_learning(attributes, examples, attribute_values, parent_examples = None):
     if len(examples) == 0:
         return plurality_value(parent_examples)
-    elif all_same_class(examples):
+    elif all_same_classification(examples):
         return classification(examples)
     elif len(attributes) == 0:
         return plurality_value(examples)
     else:
-        return None
+        #Value
+        A = -1
+        #Index
+        A_index = -1
+        
+        for attribute in attributes:
+            importance_val = importance(attributes, attribute, attribute_values)
+            if importance_val > A:
+                A_index = attribute
+                A = importance_val
+        temp = attributes[A_index]
+        
+        tree = {}
+        tree[temp[0]] = {}
+        #exs = []
+        for k in range(1,len(temp)):
+            exs = get_examples(examples, A_index, temp[k])
+            attr = get_attributes(attributes, A_index)
+            subtree = decision_tree_learning(attr, exs, attribute_values, examples)
+            tree[temp[0]][temp[k]] = subtree
+        return tree
 
-def importance(attribute, examples):
+def get_examples(examples, A_index, attribute):
+    new_examples = []
+    for example in examples:
+        if example[A_index] == attribute:
+            new_examples.append(example)
+    return new_examples
 
-    return None
+def get_np(attribute, attributes_index, attribute_values):
+    temp = attribute_values[attributes_index][attributes[attributes_index][0]]
+    return temp['yes'], temp['no']
 
-def get_attribute():
-    return None
+def importance(attribute, attributes_index, attribute_values):
+    p, n = get_np(attribute, attributes_index, attribute_values)
 
-def remainder(attributes, p, n):
-    remainder = 0
+    if p == 0 or n == 0:
+        b = 0
+    else:
+        b = B_func(float(p)/(p+n))
+    return b - remainder(attribute, attributes_index, attribute_values)
 
-    for x in range(0,len(attributes)):
-        attributes
+def get_attributes(attributes, A_index):
+    new_attr = copy.deepcopy(attributes)
+    del new_attr[A_index]
+    return new_attr
 
-    remainder = remainder/(p+n)
-    return None
+def remainder(attributes, attributes_index, attribute_values):
+    toreturn = 0
+    temp = attribute_values[attributes_index][attributes[attributes_index][0]]
+    p = temp['yes']
+    n = temp['no']
+
+    for k in range(1,len(attributes[attributes_index])):
+        temp = attribute_values[attributes_index][attributes[attributes_index][k]]
+        pk = temp['yes']
+        nk = temp['no']
+        if nk == 0 or pk == 0:
+            continue
+        div = float(pk)/(nk+pk)
+        toreturn += ((pk+nk)*B_func(div))
+
+    toreturn = toreturn/(p+n)
+    return toreturn
 
 def B_func(q):
     p = 1-q
-    return -((q*log(q,2))+(p*log(p,2)))
+    return -((q*math.log(q,2))+(p*math.log(p,2)))
 
 def plurality_value(examples):
     return False
 
 def classification(examples):
-    return False
+    return examples[0][-1]
 
-def all_same_class(examples):
-    return False
+def all_same_classification(examples):
+    classification = examples[0][-1]
+    for x in range(1, len(examples)):
+        if not examples[x][-1] == classification:
+            return False
+    return True
+
+def print_tree(tree):
+    return None
 
 if __name__ == '__main__':
     attributes, examples, attribute_values = parser(filename)
-    print("Attributes: \n%s" % attributes)
+    del attributes[len(attributes)-1]
+    tree = decision_tree_learning(attributes, examples, attribute_values)
+    
+    print("\nAttributes: \n%s" % attributes)
     print('----')
     print("Attribute-values: \n%s" % attribute_values)
     print('----')
     print("Examples: \n%s" % examples)
-    decision_tree_learning(examples, attributes)
