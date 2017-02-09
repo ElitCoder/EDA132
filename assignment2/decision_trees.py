@@ -1,8 +1,10 @@
 import re
 import math
 import copy
+import arrayhandler as ah
 
 filename = "data/weather.arff"
+CONST_TAB = "    "
 
 #TODO
 #classes, not only yes/no
@@ -10,6 +12,7 @@ filename = "data/weather.arff"
 #plurality_value
 #handle real_values
 #TABS
+#ArrayHandler for clarification
 
 def parser(filename_input):
     attributes = {}
@@ -25,16 +28,16 @@ def parser(filename_input):
                 attribute_values[i] = create_dict(attributes[i])
                 i += 1
             elif(line[:1] != "@" and line != "\n"):
-                value_list = re.split(',', line[:len(line)-1])
-                data.append(value_list)
-                insert_values(attribute_values, value_list, attributes)
+                example = re.split(',', line[:len(line)-1])
+                data.append(example)
+                insert_values(attribute_values, example, attributes)
     return attributes, data, attribute_values
 
-def insert_values(attribute_values, value_list, attributes):
-    truth = value_list[len(value_list)-1]
+def insert_values(attribute_values, example, attributes):
+    truth = ah.get_class_of_example(example)
 
-    for x in range(0,len(value_list)-1):
-        temp = value_list[x]
+    for x in range(0,len(example)-1):
+        temp = example[x]
         attribute_values[x][attributes[x][0]][truth] += 1
 
         if not is_int(temp):
@@ -73,14 +76,14 @@ def decision_tree_learning(attributes, examples, attribute_values, parent_exampl
         A = -1
         #Index
         A_index = -1
-        
+
         for attribute in attributes:
             importance_val = importance(attributes, attribute, attribute_values)
             if importance_val > A:
                 A_index = attribute
                 A = importance_val
         temp = attributes[A_index]
-        
+
         tree = {}
         tree[temp[0]] = {}
         #exs = []
@@ -146,16 +149,17 @@ def plurality_value(examples, attributes):
         else:
             return 'Hello'
     #    for values in range(1,len(temp_list)):
-    #        
+    #
     #        for example in examples:
-    #            if (example[attribute_index] == 
-    
+    #            if (example[attribute_index] ==
+
     return False
 
 def classification(examples):
     return examples[0][-1]
 
 def all_same_classification(examples):
+
     classification = examples[0][-1]
     for x in range(1, len(examples)):
         if not examples[x][-1] == classification:
@@ -165,28 +169,27 @@ def all_same_classification(examples):
 #Builds a string
 def print_tree(tree, depth = ''):
     tree_string = ""
-
     if(tree == 'no' or tree == 'yes'):
         return ' : %s\n' % tree
-
     for k in tree:
+        tree_string = tree_string + "\n"
         for value in tree[k]:
-            tree_string = "\n" + depth + tree_string + k + " = " + value
-            
-            tree_string = tree_string + print_tree(tree[k][value], depth + '  ')
-
+            tree_string = tree_string+ depth +  k + " = " + value
+            tree_string = tree_string + print_tree(tree[k][value], depth + CONST_TAB)
+            print(tree[k][value])
     return tree_string
-def help_print(attributes, attribute_values, examples):
+
+def debug_print(attributes, attribute_values, examples):
     print("\nAttributes: \n%s" % attributes)
     print('----')
     print("Attribute-values: \n%s" % attribute_values)
     print('----')
     print("Examples: \n%s" % examples)
-    
+
 if __name__ == '__main__':
     attributes, examples, attribute_values = parser(filename)
     del attributes[len(attributes)-1]
-    #help_print(attributes, attribute_values, examples)
+    #debug_print(attributes, attribute_values, examples)
     tree = decision_tree_learning(attributes, examples, attribute_values)
     #print(tree)
     print(print_tree(tree))
