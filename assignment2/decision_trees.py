@@ -35,17 +35,26 @@ def parser(filename_input):
 
     return attributes, data, attribute_values
 
+
+    #Goes through the example and picks out classification for each. 
+    #Add this to the correct attribute & the attributes value in the example
+    #(e.g. 'sunny')
+    #TODO
+    #Fix "else" (only real now, wtf?)
 def insert_values(attribute_values, example, attributes):
     classification = example[len(example)-1]
-
+    
     for x in range(0,len(example)-1):
-        temp = example[x]
-        attribute_values[x][attributes[x][0]][classification] += 1
+        attribute_value_example = example[x]
+        attribute_list = attribute_values[x]
+        attribute = attribute_list[attributes[x][0]]
+        
+        attribute[classification] += 1
 
-        if not is_int(temp):
-            attribute_values[x][temp][classification] +=1
+        if not is_int(attribute_value_example):
+            attribute_list[attribute_value_example][classification] +=1
         else:
-            attribute_values[x]['real'][classification] += 1
+            attribute_list['real'][classification] += 1     #'real' contains value rather than one out of set strings
 
 def is_int(s):
     try:
@@ -74,9 +83,7 @@ def decision_tree_learning(attributes, examples, attribute_values, parent_exampl
     elif len(attributes) == 0:
         return plurality_value(examples)
     else:
-        #Value
         A_value = -1
-        #Index
         A_index = -1
 
         for attribute in attributes:
@@ -84,17 +91,22 @@ def decision_tree_learning(attributes, examples, attribute_values, parent_exampl
             if importance_val > A_value:
                 A_index = attribute
                 A_value = importance_val
-        temp = attributes[A_index]
-
-        tree = {}
-        tree[temp[0]] = {}
-
-        for k in range(1,len(temp)):
-            exs = get_examples(examples, A_index, temp[k])
+        attribute_value_list = attributes[A_index]
+        #print(temp)
+        
+        tree = create_tree_root(attribute_value_list)
+        
+        for k in range(1,len(attribute_value_list)):
+            exs = get_examples(examples, A_index, attribute_value_list[k])
             attr = get_attributes(attributes, A_index)
             subtree = decision_tree_learning(attr, exs, attribute_values, examples)
-            tree[temp[0]][temp[k]] = subtree
+            tree[attribute_value_list[0]][attribute_value_list[k]] = subtree
         return tree
+
+def create_tree_root(root):
+    tree = {}
+    tree[root[0]] = {}
+    return tree
 
 def get_examples(examples, A_index, attribute):
     new_examples = []
