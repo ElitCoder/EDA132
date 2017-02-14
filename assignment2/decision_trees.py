@@ -8,53 +8,51 @@ CONST_TAB = "    "
 CONST_YES = 'yes'
 CONST_NO = 'no'
 number_list = ['real', 'integer', 'double']
-#TODO
-#classes, not only yes/no - Think this is fixed!
-#? - how to use it
-#plurality_value
-#handle real_values
-#ArrayHandler for clarification
 
 def parser(filename_input):
     attributes = {}
     data = []
     attribute_values = {}
-    #{'outlook':['sunny','overcast','rainy']}
     with open(filename_input, 'r') as outfile:
         i = 0
         for line in outfile:
             if(line[:2] == "@a"):
                 attribute = re.split(' ', line[11:])
                 attributes[i] = retrieve_values(attribute)
-                attribute_values[i] = create_dict(attributes[i])
                 i += 1
-            elif(line[:1] != "@" and line != "\n"):
-                example = re.split(',', line[:len(line)-1])
+
+            elif(line == "@data\n"):
+                create_attr_values(attribute_values, attributes)
+            elif(line[:1] != "\n" and line[:1] != "@"):
+                example = re.split(',', line.strip())
                 data.append(example)
                 insert_values(attribute_values, example, attributes)
-
+    
     return attributes, data, attribute_values
 
+def create_attr_values(attribute_values, attributes):
+    for index in attributes:
+        attribute_values[index] = create_dict(attributes[index], attributes)
 
-    #Goes through the example and picks out classification for each. 
-    #Add this to the correct attribute & the attributes value in the example
-    #(e.g. 'sunny')
-    #TODO
-    #Fix "else" (only real now, wtf?)
 def insert_values(attribute_values, example, attributes):
     classification = example[len(example)-1]
     
     for x in range(0,len(example)-1):
+        if not attributes.get(x):
+            continue
+            
         attribute_value_example = example[x]
         attribute_list = attribute_values[x]
-        attribute = attribute_list[attributes[x][0]]
         
-        attribute[classification] += 1
-
+        attribute = attributes[x][0]
+        attribute_classifications = attribute_list[attribute]
+        
+        attribute_classifications[classification] += 1
+        
         if not is_int(attribute_value_example):
             attribute_list[attribute_value_example][classification] +=1
         else:
-            attribute_list['real'][classification] += 1     #'real' contains value rather than one out of set strings
+            attribute_list['real'][classification] += 1
 
 def is_int(s):
     try:
@@ -63,18 +61,74 @@ def is_int(s):
     except ValueError:
         return False
 
-def create_dict(attribute_list):
+def create_dict(attribute_list, attributes):
     temp = {}
     for attribute in attribute_list:
-        temp[attribute] = {CONST_YES: 0, CONST_NO: 0}
+        temp[attribute] = {CONST_NO:0, CONST_YES:0}
+
     return temp
 
 def retrieve_values(attribute):
     values = []
     for x in range(0,len(attribute)):
-        values.append(re.search('\w+', attribute[x]).group())
+        temp_attr = ""
+        temp_attr += attribute[x].strip().strip(',').strip('{').strip('}')
+        values.append(temp_attr)
     return values
 
+def only_has_leaf(tree):
+    #print(tree)
+    
+    for index in tree:
+        if(index == 'posneg'):
+            continue
+        
+        if tree[index] == CONST_NO or tree[index] == CONST_YES:
+            print("")#LEAF")
+            
+        else:
+            return False
+    return True
+    
+def chi_pruning(tree):
+    if only_has_leaf(tree):
+        if hypothesis(tree):
+            print("")
+            
+    else:
+        for index in tree:
+            if(index == 'posneg'):
+                continue
+            
+            if tree[index] == CONST_NO or tree[index] == CONST_YES:
+                continue
+                
+            chi_pruning(tree[index])
+
+def hypothesis(tree):
+    print("hypothesis")
+    #print(tree)
+    tree_posneg = tree['posneg']
+    v = sum(tree_posneg[x] for x in tree_posneg)
+    
+    p = tree_posneg[CONST_YES]
+    n = tree_posneg[CONST_NO]
+    
+    p_k = tree[index]['posneg'][CONST_YES]
+    n_k = tree[index]['posneg'][CONST_NO]
+    
+    p_hat1 = p * (p_k / float(p + n))
+    p_hat2 = p * (n_k / float(p + n))
+    
+    n_hat1 = n * (p_k / float(p + n))
+    n_hat2 = n * (n_k / float(p + n))
+    
+    delta = ((p_k - p_hat1)**2 / p_hat1) + ((n_hat1)**2 / n_hat1) + ((p_hat2)**2 / p_hat2) + ((n_k - n_hat2)**2 / n_hat2)
+    
+    
+    
+    return True
+    
 def decision_tree_learning(attributes, examples, attribute_values, parent_examples = None):
     if len(examples) == 0:
         return plurality_value(parent_examples)
@@ -87,20 +141,28 @@ def decision_tree_learning(attributes, examples, attribute_values, parent_exampl
         A_index = -1
 
         for attribute in attributes:
-            importance_val = importance(attributes, attribute, attribute_values)
+            importance_val = importance(attributes, attribute, attribute_values, examples)
             if importance_val > A_value:
                 A_index = attribute
                 A_value = importance_val
         attribute_value_list = attributes[A_index]
-        #print(temp)
         
         tree = create_tree_root(attribute_value_list)
         
         for k in range(1,len(attribute_value_list)):
             exs = get_examples(examples, A_index, attribute_value_list[k])
             attr = get_attributes(attributes, A_index)
-            subtree = decision_tree_learning(attr, exs, attribute_values, examples)
+            attribute_values_temp = {}
+            create_attr_values(attribute_values_temp, attr)
+            #print(attribute_values)
+            for example in exs:
+                insert_values(attribute_values_temp, example, attr)
+
+            #print(attribute_values_temp)
+            subtree = decision_tree_learning(attr, exs, attribute_values_temp, examples)
             tree[attribute_value_list[0]][attribute_value_list[k]] = subtree
+            tree[attribute_value_list[0]]['posneg'] = attribute_values[A_index][attributes[A_index][0]]
+            #tree[attribute_value_list[0]]['posneg'] = attribute_values_temp[A_index]
         return tree
 
 def create_tree_root(root):
@@ -119,14 +181,14 @@ def get_np(attribute, attributes_index, attribute_values):
     temp = attribute_values[attributes_index][attributes[attributes_index][0]]
     return temp[CONST_YES], temp[CONST_NO]
 
-def importance(attribute, attributes_index, attribute_values):
-    p, n = get_np(attribute, attributes_index, attribute_values)
+def importance(attributes, attributes_index, attribute_values, examples):
+    p, n = get_np(attributes, attributes_index, attribute_values)
 
     if p == 0 or n == 0:
         b = 0
     else:
         b = B_func(float(p)/(p+n))
-    return b - remainder(attribute, attributes_index, attribute_values)
+    return b - remainder(attributes, attributes_index, attribute_values)
 
 def get_attributes(attributes, A_index):
     new_attr = copy.deepcopy(attributes)
@@ -156,24 +218,24 @@ def B_func(q):
     return -((q*math.log(q,2))+(p*math.log(p,2)))
 
 def plurality_value(examples):
-    #According to http://stackoverflow.com/questions/15643055/what-is-plurality-classification-in-decision-trees
     number_yes = 0
     for example in examples:
         number_yes += example[-1].count(CONST_YES)
-    return CONST_YES if (number_yes >= (len(examples)/float(2))) else CONST_NO
+    value = CONST_YES if (number_yes >= (len(examples)/float(2))) else CONST_NO
+    result = {value:value, 'posneg':{'yes':number_yes, 'no':len(examples)-number_yes}}
+    print(result)
+    return result
 
 def classification(examples):
     return examples[0][-1]
 
 def all_same_classification(examples):
-
     classification = examples[0][-1]
     for x in range(1, len(examples)):
         if not examples[x][-1] == classification:
             return False
     return True
 
-#Builds a string
 def print_tree(tree, depth = ''):
     tree_string = ""
     if(tree == CONST_NO or tree == CONST_YES):
@@ -181,6 +243,8 @@ def print_tree(tree, depth = ''):
     for attribute in tree:
         tree_string = tree_string + "\n"
         for value in tree[attribute]:
+            if(value == 'posneg'):
+                continue
             tree_string = tree_string + depth +  attribute + " = " + value
             tree_string = tree_string + print_tree(tree[attribute][value], depth + CONST_TAB)
     return tree_string
@@ -195,8 +259,12 @@ def debug_print(attributes, attribute_values, examples):
 if __name__ == '__main__':
     attributes, examples, attribute_values = parser(filename)
     ah.remove_class_attribute(attributes)
+    ah.remove_class_attribute(attribute_values)
 
     #debug_print(attributes, attribute_values, examples)
     tree = decision_tree_learning(attributes, examples, attribute_values)
-    #print(tree)
-    print(print_tree(tree))
+    
+    #chi_pruning(tree)
+    #chi_pruning(tree, attributes, examples)
+    print(tree)
+    #print(print_tree(tree))
