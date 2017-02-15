@@ -109,7 +109,7 @@ def hypothesis(tree):
     #from scipy.stats import chi2
     print("hypothesis")
     #print(tree)
-    #chi = chi2.isf(q=0.05, df=1)
+    #chi = chi2.isf(q=0.95, df=1)
     tree_posneg = tree['posneg']
     v = sum(tree_posneg[x] for x in tree_posneg)
 
@@ -127,8 +127,8 @@ def hypothesis(tree):
     n_hat2 = n * (n_k / float(p + n))
 
     delta = ((p_k - p_hat1)**2 / p_hat1) + ((n_hat1)**2 / n_hat1) + ((p_hat2)**2 / p_hat2) + ((n_k - n_hat2)**2 / n_hat2)
-
-
+    #if delta > chi:
+    #    return False
 
     return True
 
