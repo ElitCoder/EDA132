@@ -1,7 +1,5 @@
 #include "Example.h"
 
-#include <iostream>
-
 using namespace std;
 
 Example::Example(const vector<Attribute> &attributes, const vector<string> &values, const string &classification) : m_classification(classification) {

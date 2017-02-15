@@ -20,19 +20,43 @@ void Tree::copy(Node *from, Node **to) {
     }
 }
 
+bool Tree::isLeaf(const Node *node) const {
+    if(node->nodes.empty()) {
+        return false;
+    }
+    
+    if(node->nodes.size() == 1) {
+        if(node->nodes.at(0)->nodes.empty()) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 void Tree::print(const Node *node, int depth) const {
     if(node == nullptr) {
         return;
     }
     
-    for(int i = 0; i < depth; i++) {
-        cout << "  ";
-    }
-    
-    cout << "Node: " << node->value << '\n';
-    
-    for(const Node *leaf : node->nodes) {        
-        print(leaf, depth + 1);
+    for(const Node *leaf : node->nodes) {
+        for(int i = 0; i < depth; i++) {
+            cout << "    ";
+        }
+        
+        cout << node->value << " = " << leaf->value;
+        
+        if(isLeaf(leaf)) {
+            cout << ": " << leaf->nodes.at(0)->value << endl;
+            
+            continue;
+        }
+        
+        cout << endl;
+        
+        for(const Node *child : leaf->nodes) {
+            print(child, depth + 1);
+        }
     }
 }
 

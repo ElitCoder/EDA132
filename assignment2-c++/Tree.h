@@ -18,6 +18,7 @@ public:
     ~Tree();
     
     void add(const std::string &leaf, const Tree &sub);
+    bool isLeaf(const Node *node) const;
     
     friend std::ostream& operator<<(std::ostream& out, const Tree &t);
     
