@@ -27,7 +27,7 @@ def parser(filename_input):
                 example = re.split(',', line.strip())
                 data.append(example)
                 insert_values(attribute_values, example, attributes)
-    
+
     return attributes, data, attribute_values
 
 def create_attr_values(attribute_values, attributes):
@@ -36,19 +36,19 @@ def create_attr_values(attribute_values, attributes):
 
 def insert_values(attribute_values, example, attributes):
     classification = example[len(example)-1]
-    
+
     for x in range(0,len(example)-1):
         if not attributes.get(x):
             continue
-            
+
         attribute_value_example = example[x]
         attribute_list = attribute_values[x]
-        
+
         attribute = attributes[x][0]
         attribute_classifications = attribute_list[attribute]
-        
+
         attribute_classifications[classification] += 1
-        
+
         if not is_int(attribute_value_example):
             attribute_list[attribute_value_example][classification] +=1
         else:
@@ -78,57 +78,59 @@ def retrieve_values(attribute):
 
 def only_has_leaf(tree):
     #print(tree)
-    
+
     for index in tree:
         if(index == 'posneg'):
             continue
-        
+
         if tree[index] == CONST_NO or tree[index] == CONST_YES:
             print("")#LEAF")
-            
+
         else:
             return False
     return True
-    
+
 def chi_pruning(tree):
     if only_has_leaf(tree):
         if hypothesis(tree):
             print("")
-            
+
     else:
         for index in tree:
             if(index == 'posneg'):
                 continue
-            
+
             if tree[index] == CONST_NO or tree[index] == CONST_YES:
                 continue
-                
+
             chi_pruning(tree[index])
 
 def hypothesis(tree):
+    from scipy import stats
     print("hypothesis")
     #print(tree)
     tree_posneg = tree['posneg']
     v = sum(tree_posneg[x] for x in tree_posneg)
-    
+
     p = tree_posneg[CONST_YES]
     n = tree_posneg[CONST_NO]
-    
-    p_k = tree[index]['posneg'][CONST_YES]
-    n_k = tree[index]['posneg'][CONST_NO]
-    
+    print(tree)
+
+    p_k = tree['posneg'][CONST_YES]
+    n_k = tree['posneg'][CONST_NO]
+
     p_hat1 = p * (p_k / float(p + n))
     p_hat2 = p * (n_k / float(p + n))
-    
+
     n_hat1 = n * (p_k / float(p + n))
     n_hat2 = n * (n_k / float(p + n))
-    
+
     delta = ((p_k - p_hat1)**2 / p_hat1) + ((n_hat1)**2 / n_hat1) + ((p_hat2)**2 / p_hat2) + ((n_k - n_hat2)**2 / n_hat2)
-    
-    
-    
+
+
+
     return True
-    
+
 def decision_tree_learning(attributes, examples, attribute_values, parent_examples = None):
     if len(examples) == 0:
         return plurality_value(parent_examples)
@@ -146,9 +148,9 @@ def decision_tree_learning(attributes, examples, attribute_values, parent_exampl
                 A_index = attribute
                 A_value = importance_val
         attribute_value_list = attributes[A_index]
-        
+
         tree = create_tree_root(attribute_value_list)
-        
+
         for k in range(1,len(attribute_value_list)):
             exs = get_examples(examples, A_index, attribute_value_list[k])
             attr = get_attributes(attributes, A_index)
@@ -238,9 +240,15 @@ def all_same_classification(examples):
 
 def print_tree(tree, depth = ''):
     tree_string = ""
+
     if(tree == CONST_NO or tree == CONST_YES):
         return ' : %s\n' % tree
+
     for attribute in tree:
+        if(attribute == CONST_NO or attribute == CONST_YES):
+            return ' : %s\n' % tree[attribute]
+        if(attribute == 'posneg'):
+            continue
         tree_string = tree_string + "\n"
         for value in tree[attribute]:
             if(value == 'posneg'):
@@ -263,8 +271,8 @@ if __name__ == '__main__':
 
     #debug_print(attributes, attribute_values, examples)
     tree = decision_tree_learning(attributes, examples, attribute_values)
-    
+
     #chi_pruning(tree)
-    #chi_pruning(tree, attributes, examples)
-    print(tree)
-    #print(print_tree(tree))
+    chi_pruning(tree)#, attributes, examples)
+    #print(tree)
+    print(print_tree(tree))
