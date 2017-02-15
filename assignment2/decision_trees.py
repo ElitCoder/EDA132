@@ -106,9 +106,10 @@ def chi_pruning(tree):
             chi_pruning(tree[index])
 
 def hypothesis(tree):
-    from scipy import stats
+    #from scipy.stats import chi2
     print("hypothesis")
     #print(tree)
+    #chi = chi2.isf(q=0.05, df=1)
     tree_posneg = tree['posneg']
     v = sum(tree_posneg[x] for x in tree_posneg)
 
