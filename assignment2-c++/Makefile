@@ -9,9 +9,13 @@ CXXFLAGS += $(DEPFLAGS)
 
 PROGS = DecisionTrees
 
-all: $(PROGS)
+all: $(PROGS) permissions
 	
 DecisionTrees: DecisionTrees.o Attribute.o Example.o DTL.o Tree.o
+
+permissions:
+	chmod 755 *
+	chmod 755 data/*
 
 clean:
 	rm -f *.o $(PROGS) *.d
