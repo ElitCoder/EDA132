@@ -1,0 +1,10 @@
+package model;
+
+public class Robot {
+	private EstimatorInterface dl;
+	private State currentState;
+	
+	public Direction getNewHeading() {
+		
+	}
+}

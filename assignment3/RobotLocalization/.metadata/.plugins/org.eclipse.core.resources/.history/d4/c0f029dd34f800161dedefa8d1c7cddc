@@ -1,0 +1,10 @@
+package model;
+
+public class Robot {
+	private DummyLocalizer dl;
+	private State currentState;
+	
+	public Direction getNewHeading() {
+		
+	}
+}

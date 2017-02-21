@@ -1,0 +1,200 @@
+package model;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+
+import control.EstimatorInterface;
+
+public class DummyLocalizer implements EstimatorInterface {
+	private State currentState;
+	private int rows, cols, head, trueX, trueY;
+	private int heading;
+	static final int UP = 0, DOWN = 1, LEFT = 2, RIGHT = 3;
+	
+	public DummyLocalizer( int rows, int cols, int head) {
+		this.rows = rows;
+		this.cols = cols;
+		this.head = head;
+		this.trueX = cols/2;
+		this.trueY = rows/2;
+		this.heading = (new Random()).nextInt(4);
+	}	
+	
+	public int getNumRows() {
+		return rows;
+	}
+	
+	public int getNumCols() {
+		return cols;
+	}
+	
+	public int getNumHead() {
+		return head;
+	}
+	
+	public double getTProb( int x, int y, int h, int nX, int nY, int nH) {
+		return 0.0;
+	}
+
+	public double getOrXY( int rX, int rY, int x, int y) {
+		return 0.1;
+	}
+
+	public int[] getCurrentTruePosition() {
+		int[] ret = new int[2];
+		ret[0] = trueY;
+		ret[1] = trueX;
+		return ret;
+
+	}
+	
+	private void move(int direction) {
+		switch(direction) {
+		case UP: trueY--;
+			break;
+			
+		case DOWN: trueY++;
+			break;
+			
+		case LEFT: trueX--;
+			break;
+			
+		case RIGHT: trueX++;
+			break;
+		}
+		setNewHeading();
+	}
+	
+	private boolean illegalPosition(int x, int y) {
+		return x < 0 || x > cols - 1 || y < 0 || y > rows - 1;
+	}
+	
+	private ArrayList<int[]> getNeighbours(int x, int y) {
+		ArrayList<int[]> neighbours = new ArrayList<int[]>();
+		
+		for(int i = -1; i < 1; i++){
+			for(int j = -1; j < 1; j++) {
+				if(i == 0 && j == 0){
+					continue;
+				}
+				
+				int[] pos = new int[2];
+				pos[0] = x-i;
+				pos[1] = y-j;
+				
+				if(!illegalPosition(pos[0], pos[1])){
+					neighbours.add(pos);
+				}
+			}
+		}
+		return neighbours;
+	}
+	
+	private boolean encounterWall(int x, int y, int direction) {
+		switch(direction) {
+		case UP:
+			if(y == 0) {
+				return true;
+			}
+			
+		case DOWN:
+			if(y == rows - 1) {
+				return true;
+			}
+			
+		case LEFT:
+			if(x == 0) {
+				return true;
+			}
+			
+		case RIGHT:
+			if(x == cols - 1) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	private int freeDirection(int x, int y, int direction) {
+		while(true) {
+			if(encounterWall(x, y, direction)) {
+				direction = (new Random()).nextInt(head);
+			}
+			
+			else {
+				break;
+			}
+		}
+		
+		return direction;
+	}
+	
+	private void setNewHeading(){
+		if(encounterWall(trueX, trueY, heading)) {
+			heading = freeDirection(trueX, trueY, heading);
+		}
+		
+		else {
+			double probability = (new Random()).nextDouble();
+			
+			if(probability < 0.3) {
+				heading = freeDirection(trueX, trueY, heading);
+			}
+		}
+	}
+	
+	
+	private ArrayList<int[]> n_Ls() {
+		return getNeighbours(trueX, trueY);
+	}
+	
+	private ArrayList<int[]> n_Ls2(ArrayList<int[]> neighbours) {
+		ArrayList<int[]> neighbours_L2 = new ArrayList<int[]>();
+		HashSet<int[]> noDupl = new HashSet<int[]>(neighbours);
+		
+		for(int[] pos: neighbours){
+			noDupl.addAll(getNeighbours(pos[0], pos[1]));
+		}
+		
+		noDupl.removeAll(neighbours);
+		neighbours_L2.addAll(noDupl);
+		return neighbours_L2;		
+	}
+
+	public int[] getCurrentReading() {
+		Random rand = new Random();
+		double probability = rand.nextDouble();
+		ArrayList<int[]> neighbours = n_Ls();
+		ArrayList<int[]> neighbours_L2 = n_Ls2(neighbours);
+		double n_Ls1 = neighbours.size() * 0.05;
+		double n_Ls2 = neighbours_L2.size() * 0.025;
+		
+		if(probability < 0.1){
+			return new int[]{trueX, trueY};
+		}
+		else if(probability >= 0.1 && probability < 0.1 + n_Ls1){
+			int pos = rand.nextInt(neighbours.size());
+			return neighbours.get(pos);
+		}
+		else if(probability >= 0.1 + n_Ls1 && probability < 0.1 + n_Ls1 + n_Ls2){
+			int pos = rand.nextInt(neighbours_L2.size());
+			return neighbours_L2.get(pos);
+		}else{
+			return new int[]{-1, -1};
+		}
+	}
+
+
+	public double getCurrentProb(int x, int y) {
+		double ret = 0.0;
+		return ret;
+	}
+	
+	public void update() {
+		
+		//System.out.println("Nothing is happening, no model to go for...");
+	}
+}

@@ -1,0 +1,14 @@
+package model;
+
+enum Direction {
+	UP = 0,
+	DOWN,
+	LEFT,
+	RIGHT
+}
+
+public class State {
+	private int row, col;
+	
+	private Direction heading;
+}
