@@ -1,0 +1,228 @@
+package model;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import control.EstimatorInterface;
+
+public class DummyLocalizer implements EstimatorInterface {
+	private State currentState;
+	private int rows, cols, head, trueX, trueY;
+	private int heading;
+	static final int UP = 0, DOWN = 1, LEFT = 2, RIGHT = 3;
+	
+	public DummyLocalizer( int rows, int cols, int head) {
+		this.rows = rows;
+		this.cols = cols;
+		this.head = head;
+		this.trueX = 1;
+		this.trueY = 1;
+		this.heading = (new Random()).nextInt(4);
+	}	
+	
+	public int getNumRows() {
+		return rows;
+	}
+	
+	public int getNumCols() {
+		return cols;
+	}
+	
+	public int getNumHead() {
+		return head;
+	}
+	
+	public double getTProb( int x, int y, int h, int nX, int nY, int nH) {
+		return 0.0;
+	}
+
+	public double getOrXY( int rX, int rY, int x, int y) {
+		
+		return 0.1;
+	}
+
+	public int[] getCurrentTruePosition() {
+		int[] ret = new int[2];
+		ret[0] = trueY;
+		ret[1] = trueX;
+		return ret;
+
+	}
+	
+	private void move(int direction) {
+		switch(direction) {
+		case UP: trueY--;
+			break;
+			
+		case DOWN: trueY++;
+			break;
+			
+		case LEFT: trueX--;
+			break;
+			
+		case RIGHT: trueX++;
+			break;
+		}
+		setNewHeading();
+	}
+	
+	private boolean illegalPosition(Position pos) {
+		int x = pos.x;
+		int y = pos.y;
+		return x < 0 || x > cols - 1 || y < 0 || y > rows - 1;
+	}
+	
+	private ArrayList<Position> getNeighbours(int x, int y) {
+		ArrayList<Position> neighbours = new ArrayList<Position>();
+		
+		for(int i = -1; i <= 1; i++){
+			for(int j = -1; j <= 1; j++) {
+				if(i == 0 && j == 0){
+					continue;
+				}
+
+				Position pos = new Position(x-i, y-j);
+				if(!illegalPosition(pos)){
+					neighbours.add(pos);
+				}
+			}
+		}
+		return neighbours;
+	}
+	
+	private boolean encounterWall(int x, int y, int direction) {
+		switch(direction) {
+		case UP:
+			if(y == 0) {
+				return true;
+			}
+			
+		case DOWN:
+			if(y == rows - 1) {
+				return true;
+			}
+			
+		case LEFT:
+			if(x == 0) {
+				return true;
+			}
+			
+		case RIGHT:
+			if(x == cols - 1) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	private int freeDirection(int x, int y, int direction) {
+		while(true) {
+			if(encounterWall(x, y, direction)) {
+				direction = (new Random()).nextInt(head);
+			}
+			
+			else {
+				break;
+			}
+		}
+		
+		return direction;
+	}
+	
+	private void setNewHeading(){
+		if(encounterWall(trueX, trueY, heading)) {
+			heading = freeDirection(trueX, trueY, heading);
+		}
+		
+		else {
+			double probability = (new Random()).nextDouble();
+			
+			if(probability < 0.3) {
+				heading = freeDirection(trueX, trueY, heading);
+			}
+		}
+	}
+	
+	private ArrayList<Position> n_Ls() {
+		return getNeighbours(new Position(trueX, trueY));
+	}
+	
+	private ArrayList<int[]> n_Ls2(ArrayList<int[]> neighbours) {
+		ArrayList<int[]> neighbours_L2 = new ArrayList<int[]>();
+		HashSet<int[]> noDupl = new HashSet<int[]>(neighbours);
+		
+		for(Position pos: neighbours){
+			List<Position> current = getNeighbours(pos);
+			
+			for(Position hej : current){
+				if(noDupl.contains(hej)){
+					System.out.println("WTF");
+				}
+			}
+			noDupl.addAll(current);
+		}
+		
+		noDupl.removeAll(neighbours);
+		neighbours_L2.addAll(noDupl);
+		return neighbours_L2;		
+	}
+
+	public int[] getCurrentReading() {
+		Random rand = new Random();
+		double probability = rand.nextDouble();
+		ArrayList<int[]> neighbours = n_Ls();
+		ArrayList<int[]> neighbours_L2 = n_Ls2(neighbours);
+		
+		System.out.println("NEIGHBOUR 1: " + neighbours.size());
+		System.out.println("NEIGHBOUR 2: " + neighbours_L2.size());
+		double n_Ls1 = neighbours.size() * 0.05;
+		double n_Ls2 = neighbours_L2.size() * 0.025;
+		
+		if(probability < 0.1){
+			return new int[]{trueX, trueY};
+		}
+		else if(probability >= 0.1 && probability < 0.1 + n_Ls1){
+			int pos = rand.nextInt(neighbours.size());
+			return neighbours.get(pos);
+		}
+		else if(probability >= 0.1 + n_Ls1 && probability < 0.1 + n_Ls1 + n_Ls2){
+			int pos = rand.nextInt(neighbours_L2.size());
+			return neighbours_L2.get(pos);
+		}else{
+			return null;
+		}
+	}
+
+
+	public double getCurrentProb(int x, int y) {
+		double ret = 0.0;
+		return ret;
+	}
+	
+	public void update() {
+		move(heading);
+		
+		//System.out.println("Nothing is happening, no model to go for...");
+	}
+	
+	public class Position {
+		private int x, y;
+		
+		public Position(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+		
+		public boolean equals(Position enemy) {
+			return x == enemy.x && y == enemy.y;
+		}
+		
+		public String toString() {
+			return x + ", " + y;
+		}
+	}
+}

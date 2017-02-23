@@ -2,8 +2,10 @@ package model;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 
 import control.EstimatorInterface;
 
@@ -39,6 +41,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
+		
 		return 0.1;
 	}
 
@@ -67,32 +70,35 @@ public class DummyLocalizer implements EstimatorInterface {
 		setNewHeading();
 	}
 	
-	private boolean illegalPosition(int x, int y) {
+	private boolean illegalPosition(Position pos) {
+		int x = pos.x;
+		int y = pos.y;
 		return x < 0 || x > cols - 1 || y < 0 || y > rows - 1;
 	}
 	
-	private ArrayList<int[]> getNeighbours(int x, int y) {
-		ArrayList<int[]> neighbours = new ArrayList<int[]>();
+	private ArrayList<Position> getNeighbours(Position pos) {
+		ArrayList<Position> neighbours = new ArrayList<Position>();
+		int x = pos.x;
+		int y = pos.y;
 		
-		for(int i = -1; i < 1; i++){
-			for(int j = -1; j < 1; j++) {
+		for(int i = -1; i <= 1; i++){
+			for(int j = -1; j <= 1; j++) {
 				if(i == 0 && j == 0){
 					continue;
 				}
-				
-				int[] pos = new int[2];
-				pos[0] = x-i;
-				pos[1] = y-j;
-				
-				if(!illegalPosition(pos[0], pos[1])){
-					neighbours.add(pos);
+
+				Position neighbour = new Position(x-i, y-j);
+				if(!illegalPosition(neighbour)){
+					neighbours.add(neighbour);
 				}
 			}
 		}
 		return neighbours;
 	}
 	
-	private boolean encounterWall(int x, int y, int direction) {
+	private boolean encounterWall(Position pos, int direction) {
+		int x = pos.x;
+		int y = pos.y;
 		switch(direction) {
 		case UP:
 			if(y == 0) {
@@ -118,9 +124,9 @@ public class DummyLocalizer implements EstimatorInterface {
 		return false;
 	}
 	
-	private int freeDirection(int x, int y, int direction) {
+	private int freeDirection(Position pos, int direction) {
 		while(true) {
-			if(encounterWall(x, y, direction)) {
+			if(encounterWall(pos, direction)) {
 				direction = (new Random()).nextInt(head);
 			}
 			
@@ -133,42 +139,74 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	private void setNewHeading(){
-		if(encounterWall(trueX, trueY, heading)) {
-			heading = freeDirection(trueX, trueY, heading);
+		Position pos = new Position(trueX, trueY);
+		if(encounterWall(pos, heading)) {
+			heading = freeDirection(pos, heading);
 		}
 		
 		else {
 			double probability = (new Random()).nextDouble();
 			
 			if(probability < 0.3) {
-				heading = freeDirection(trueX, trueY, heading);
+				heading = freeDirection(pos, heading);
 			}
 		}
 	}
 	
-	
-	private ArrayList<int[]> n_Ls() {
-		return getNeighbours(trueX, trueY);
+	private ArrayList<Position> n_Ls() {
+		return getNeighbours(new Position(trueX, trueY));
 	}
 	
-	private ArrayList<int[]> n_Ls2(ArrayList<int[]> neighbours) {
-		ArrayList<int[]> neighbours_L2 = new ArrayList<int[]>();
-		HashSet<int[]> noDupl = new HashSet<int[]>(neighbours);
-		
-		for(int[] pos: neighbours){
-			noDupl.addAll(getNeighbours(pos[0], pos[1]));
+	private List<Position> getNeighboursAtDist(int dist, Position loc) {
+		List<Position> points = new ArrayList<Position>();
+		for (int i = loc.x - dist; i <= loc.x + dist; i++) {
+			for (int j = loc.y - dist; j <= loc.y + dist; j++) {
+				Position pos = new Position(i, j);
+				if (Math.max(i, j) == dist && !illegalPosition(pos)) {
+					points.add(pos);
+				}
+			}
+		}
+		return points;
+	}
+	
+	private boolean inList(Position pos, ArrayList<Position> list){
+		if(pos.equals(new Position(trueX, trueY))){
+			return true;
+		}
+		for(Position element : list){
+			if(element.equals(pos)){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private ArrayList<Position> n_Ls2(ArrayList<Position> neighbours) {
+		ArrayList<Position> neighbours_L2 = new ArrayList<Position>();
+
+		for(Position pos: neighbours){
+			List<Position> current = getNeighbours(pos);
+			
+			for(Position element : current){
+				if(!inList(element, neighbours) && !inList(element, neighbours_L2)){
+					neighbours_L2.add(element);
+				}
+
+				
+			}
 		}
 		
-		noDupl.removeAll(neighbours);
-		neighbours_L2.addAll(noDupl);
 		return neighbours_L2;		
 	}
 
 	public int[] getCurrentReading() {
 		Random rand = new Random();
 		double probability = rand.nextDouble();
-		ArrayList<int[]> neighbours = n_Ls();
-		ArrayList<int[]> neighbours_L2 = n_Ls2(neighbours);
+		ArrayList<Position> neighbours = n_Ls();
+		List<Position> neighbours_L2 = n_Ls2(neighbours);
+		System.out.println("Size L2: " + neighbours_L2.size());
+		System.out.println("Size : " + neighbours.size());
 		double n_Ls1 = neighbours.size() * 0.05;
 		double n_Ls2 = neighbours_L2.size() * 0.025;
 		
@@ -177,11 +215,11 @@ public class DummyLocalizer implements EstimatorInterface {
 		}
 		else if(probability >= 0.1 && probability < 0.1 + n_Ls1){
 			int pos = rand.nextInt(neighbours.size());
-			return neighbours.get(pos);
+			return new int[]{neighbours.get(pos).x, neighbours.get(pos).y};
 		}
 		else if(probability >= 0.1 + n_Ls1 && probability < 0.1 + n_Ls1 + n_Ls2){
 			int pos = rand.nextInt(neighbours_L2.size());
-			return neighbours_L2.get(pos);
+			return new int[]{neighbours_L2.get(pos).x, neighbours_L2.get(pos).y};
 		}else{
 			return null;
 		}
@@ -197,5 +235,34 @@ public class DummyLocalizer implements EstimatorInterface {
 		move(heading);
 		
 		//System.out.println("Nothing is happening, no model to go for...");
+	}
+	
+	public class Position implements Comparable{
+		private int x, y;
+		
+		public Position(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			return x == ((Position)obj).x && y == ((Position)obj).y;
+		}
+		
+		public String toString() {
+			return x + ", " + y;
+		}
+
+		@Override
+		public int compareTo(Object arg0) {
+			if(((Position)arg0).x - x == 0 && ((Position)arg0).y - y == 0){
+				return 0;
+			}
+			else if(((Position)arg0).x < x){
+				return -1;
+			}
+			return 1;
+		}
 	}
 }
