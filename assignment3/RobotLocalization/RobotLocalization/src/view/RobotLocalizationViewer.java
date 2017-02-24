@@ -151,22 +151,29 @@ public class RobotLocalizationViewer {
 		initFlag = true;
 	}
 
-	public synchronized void updateOneStep( ){		
+	public synchronized void updateOneStep( ){	
+		System.out.println("updateOneStep()");
+		
 		if( initFlag) {
 			loc.update();
+			System.out.println("updateOneStep(): loc.update done");
 			int[] tXY = loc.getCurrentTruePosition();
 			int[] sXY = loc.getCurrentReading();
-			if( sXY != null)
+
+			if( sXY != null){
+				System.out.println("Sensorreading: " + sXY[0] + ", " + sXY[1]);
 				updateViewer(  tXY[0], tXY[1], sXY[0], sXY[1]);	
+			}
 			else
 				updateViewer(  tXY[0], tXY[1], -1, -1);	
 					
 		}
+		System.out.println("updateOneStep(): Done");
+
 	}
 	
 	public synchronized void updateContinuously() throws InterruptedException {
 		while( !runFlag) wait();
-		
 		updateOneStep();
 	}
 
@@ -180,7 +187,6 @@ public class RobotLocalizationViewer {
 		maxX = maxY = -1;
 		for( x=0; x<rows; x++) {
 			for( y=0; y<cols; y++) {
-
 				posProb = 0.0;
 				posProb = loc.getCurrentProb( x, y);
 				states[x][y][0].setText( String.format("%.4f", posProb));				
@@ -221,7 +227,6 @@ public class RobotLocalizationViewer {
 		if( sX != -1)
 			states[sX][sY][4].setBackground(Color.cyan);
 		
-				
 	}
 
 	public void updateTransitionView() {

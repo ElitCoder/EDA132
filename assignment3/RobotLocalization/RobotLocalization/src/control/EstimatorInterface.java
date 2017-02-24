@@ -61,6 +61,6 @@ public interface EstimatorInterface {
 	 * returns the probability entry (Tij) of the transition matrix T to go from pose 
 	 * i = (x, y, h) to pose j = (nX, nY, nH)
 	 */	
-	public double getTProb( int x, int y, int h, int nX, int nY, int nH);
+	public double getTProb(int x, int y, int h, int nX, int nY, int nH);
 
 }

@@ -1,19 +1,16 @@
 package model;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
-
 import control.EstimatorInterface;
 
 public class DummyLocalizer implements EstimatorInterface {
 	private State currentState;
 	private int rows, cols, head, trueX, trueY;
 	private int heading;
-	static final int UP = 0, DOWN = 1, LEFT = 2, RIGHT = 3;
+	static final int LEFT = 0, DOWN = 1, RIGHT = 2, UP = 3;
+	private double[][] matrixO, matrixT;
 	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -22,7 +19,33 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.trueX = 1;
 		this.trueY = 1;
 		this.heading = (new Random()).nextInt(4);
+		
+		matrixO = new double[head * cols * rows][head * cols * rows];
+		matrixT = new double[head * cols * rows][head * cols * rows];
+		
 	}	
+	
+	/*private void initiateMatrixT(int x, int y) {
+		matrixT[LEFT][x - 1][y] = 0;
+		matrixT[RIGHT][x - 1][y] = 1/(double)12;
+		matrixT[UP][x - 1][y] = 1/(double)12;
+		matrixT[DOWN][x - 1][y] = 1/(double)12;
+		
+		matrixT[LEFT][x][y - 1] = 1/(double)12;
+		matrixT[RIGHT][x][y - 1] = 1/(double)12;
+		matrixT[UP][x][y - 1] = 0;
+		matrixT[DOWN][x][y - 1] = 1/(double)12;
+		
+		matrixT[LEFT][x + 1][y] = 0.025;
+		matrixT[RIGHT][x + 1][y] = 0.175;
+		matrixT[UP][x + 1][y] = 0.025;
+		matrixT[DOWN][x + 1][y] = 0.025;
+		
+		matrixT[LEFT][x][y + 1] = 0.025;
+		matrixT[RIGHT][x][y + 1] = 0.025;
+		matrixT[UP][x][y + 1] = 0.025;
+		matrixT[DOWN][x][y + 1] = 0.175;
+	}*/
 	
 	public int getNumRows() {
 		return rows;
@@ -37,12 +60,17 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	public double getTProb( int x, int y, int h, int nX, int nY, int nH) {
-		return 0.0;
+		//System.out.println(x + " , " + y + " , " + h+ " , " + nX+ " , " + nY + " , " + nH);
+		return 0.1;
+		//return 0;
+	}
+	
+	private void buildMatrixT() {
+		
 	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
-		
-		return 0.1;
+		return 0.1337;
 	}
 
 	public int[] getCurrentTruePosition() {
@@ -104,39 +132,51 @@ public class DummyLocalizer implements EstimatorInterface {
 			if(y == 0) {
 				return true;
 			}
+			break;
 			
 		case DOWN:
 			if(y == rows - 1) {
 				return true;
 			}
-			
+			break;
+
 		case LEFT:
 			if(x == 0) {
 				return true;
 			}
-			
+			break;
+
 		case RIGHT:
 			if(x == cols - 1) {
 				return true;
 			}
+			break;
+
 		}
 		
 		return false;
 	}
 	
 	private int freeDirection(Position pos, int direction) {
+		direction = (new Random()).nextInt(head);
 		while(true) {
 			if(encounterWall(pos, direction)) {
 				direction = (new Random()).nextInt(head);
+				System.out.println("Direction: " + direction);
 			}
 			
 			else {
 				break;
 			}
 		}
-		
 		return direction;
 	}
+	//O: State*State matrix
+	//Diagonal = states probability
+	//Rest = 0
+	
+	//T: State*State matrix
+	//
 	
 	private void setNewHeading(){
 		Position pos = new Position(trueX, trueY);
@@ -146,8 +186,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		else {
 			double probability = (new Random()).nextDouble();
-			
-			if(probability < 0.3) {
+			if(probability <= 0.3) {
 				heading = freeDirection(pos, heading);
 			}
 		}
@@ -205,8 +244,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		double probability = rand.nextDouble();
 		ArrayList<Position> neighbours = n_Ls();
 		List<Position> neighbours_L2 = n_Ls2(neighbours);
-		System.out.println("Size L2: " + neighbours_L2.size());
-		System.out.println("Size : " + neighbours.size());
+
 		double n_Ls1 = neighbours.size() * 0.05;
 		double n_Ls2 = neighbours_L2.size() * 0.025;
 		
@@ -232,8 +270,9 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	public void update() {
+
 		move(heading);
-		
+	
 		//System.out.println("Nothing is happening, no model to go for...");
 	}
 	
