@@ -7,10 +7,11 @@ import control.EstimatorInterface;
 
 public class DummyLocalizer implements EstimatorInterface {
 	private State currentState;
-	private int rows, cols, head, trueX, trueY;
+	private int rows, cols, head, trueX, trueY, states;
 	private int heading;
 	static final int LEFT = 0, DOWN = 1, RIGHT = 2, UP = 3;
 	private double[][] matrixO, matrixT;
+	private State[] stateMapping;
 	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -19,11 +20,36 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.trueX = 1;
 		this.trueY = 1;
 		this.heading = (new Random()).nextInt(4);
+		this.states = head*cols*rows;
 		
-		matrixO = new double[head * cols * rows][head * cols * rows];
-		matrixT = new double[head * cols * rows][head * cols * rows];
+		matrixO = new double[states][states];
+		matrixT = new double[states][states];
 		
-	}	
+		stateMapping = new State[states];
+		
+	}
+	
+	private void buildStateVector() {
+		
+	}
+	
+	private void initiateMatrixT(){
+		for(int i = 0; i < states; i++){
+			for(int j = 0; j < states; j++){
+				//State 0 = 0,0,3. State 1 = 0,0,2, State 2 = 0,0,1, State 3 = 0,0,0, State 4 = 1,0,3 (x,y,heading)
+				//Position pos = new Position(i,j);
+				if(i == j){
+					matrixT[i][j] = 0;
+					continue;
+				}
+				
+				
+				if(encounterWall(pos)){
+					
+				}
+			}
+		}
+	}
 	
 	/*private void initiateMatrixT(int x, int y) {
 		matrixT[LEFT][x - 1][y] = 0;
@@ -163,9 +189,7 @@ public class DummyLocalizer implements EstimatorInterface {
 			if(encounterWall(pos, direction)) {
 				direction = (new Random()).nextInt(head);
 				System.out.println("Direction: " + direction);
-			}
-			
-			else {
+			}else {
 				break;
 			}
 		}
