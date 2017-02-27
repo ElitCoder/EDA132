@@ -1,6 +1,7 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import control.EstimatorInterface;
@@ -8,12 +9,14 @@ import control.EstimatorInterface;
 public class DummyLocalizer implements EstimatorInterface {
 	private final int LEFT = 0, DOWN = 1, RIGHT = 2, UP = 3;
 	
-	private State currentState;
 	private int rows, cols, head, trueX, trueY, states, heading;
+	private int[] sensorXY;
 	
+	private double[] forward;
 	private double[][] matrixT;
 	private double[][][] matrixO;
 	private ArrayList<State> stateMapping;
+	private double[][] tTranspose;
 	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -24,13 +27,26 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.heading = (new Random()).nextInt(4);
 		this.states = head * cols * rows;
 				
+		forward = new double[states];
 		matrixO = new double[(cols * rows) + 1][states][states];
 		matrixT = new double[states][states];
 		stateMapping = new ArrayList<State>();
-		
+
 		buildStateVector();
 		initiateMatrixT();
 		initiateMatrixO();
+		initateForward();
+		
+		tTranspose = transposeMatrix(matrixT);
+	}
+	
+	private void initateForward() {
+		int index = stateMapping.indexOf(new State(trueX, trueY, LEFT));
+		
+		forward[index++] = 0.25;
+		forward[index++] = 0.25;
+		forward[index++] = 0.25;
+		forward[index++] = 0.25;
 	}
 	
 	private void initiateMatrixO() {
@@ -40,18 +56,59 @@ public class DummyLocalizer implements EstimatorInterface {
 			Position posState = new Position(currState.getX(), currState.getY());
 			
 			ArrayList<Position> n_Ls = getNeighbours(posState);
-			ArrayList<Position> n_Ls2 = n_Ls2(n_Ls);
+			ArrayList<Position> n_Ls2 = n_Ls2(posState, n_Ls);
 			
-			matrixO[0][state][state] = 1 - 0.1 - (n_Ls.size() * 0.05) - (n_Ls2.size() * 0.025);
+			matrixO[16][state][state] = 1 - 0.1 - (n_Ls.size() * 0.05) - (n_Ls2.size() * 0.025);
 		}
+		
+		normalizeMatrix(matrixO[16]);
 
-		for(int evidence = 1; evidence < (rows*cols) + 1; evidence++) {
+		//P(e_t | x_t)
+		for(int evidence = 0; evidence < rows * cols; evidence++) {
+			Position evidencePos = new Position(evidence/4, evidence%4);
+			System.out.println("Evidence: " + evidence + ", pos: (" + evidencePos.x + ", " + evidencePos.y + ")");
 			for(int state = 0; state < states; state++){
-				
-				if(evidence == state){
+				if(ifSameState(evidence, state)){
 					matrixO[evidence][state][state] = 0.1;
+					continue;
+				}
+				
+				State currState = stateMapping.get(state);
+				Position posState = new Position(currState.getX(), currState.getY());
+
+				ArrayList<Position> n_Ls = getNeighbours(posState);
+				ArrayList<Position> n_Ls2 = n_Ls2(posState, n_Ls);
+								
+				if(n_Ls.contains(evidencePos)) {
+					matrixO[evidence][state][state] = 0.05;
+					
+					continue;
+				}
+				
+				if(n_Ls2.contains(evidencePos)) {
+					matrixO[evidence][state][state] = 0.025;
+					
+					continue;
 				}
 			}
+			
+			normalizeMatrix(matrixO[evidence]);
+		}
+	}
+	
+	private boolean ifSameState(int evidence, int state){
+		return evidence == state/4;
+	}
+	
+	private void normalizeMatrix(double[][] matrix){
+		double sum = 0;
+		
+		for(int i = 0; i < states; i++){
+			sum += matrix[i][i];
+		}
+		
+		for(int i = 0; i < states; i++){
+			matrix[i][i] /= sum;
 		}
 	}
 	
@@ -134,8 +191,6 @@ public class DummyLocalizer implements EstimatorInterface {
 	private void initiateMatrixT(){
 		for(int i = 0; i < states; i++){
 			for(int j = 0; j < states; j++){
-				//State 0 = 0,0,0. State 1 = 0,0,1, State 2 = 0,0,2, State 3 = 0,0,3, State 4 = 1,0,0 (x,y,heading)
-				
 				if(i == j){
 					matrixT[i][j] = 0;
 					continue;
@@ -229,20 +284,22 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
-		return 0.1337;
+		int index = rX * 4 + rY;
+		
+		State nothing = new State(x, y, UP);
+		int stateIndex = stateMapping.indexOf(nothing);
+		
+		if(rX == -1 || rY == -1) {
+			System.out.println("In the void of anus.");
+			
+			return matrixO[16][stateIndex][stateIndex] * 4;
+		}
+				
+		return matrixO[index][stateIndex][stateIndex] * 4;
 	}
 
 	public int[] getCurrentTruePosition() {
 		return new int[]{trueX, trueY};
-		
-		/*
-		int[] ret = new int[2];
-		
-		ret[0] = trueY;
-		ret[1] = trueX;
-		
-		return ret;
-		*/
 	}
 	
 	private void move() {
@@ -364,8 +421,8 @@ public class DummyLocalizer implements EstimatorInterface {
 		return getNeighbours(new Position(trueX, trueY));
 	}
 	
-	private boolean inList(Position pos, ArrayList<Position> list){
-		if(pos.equals(new Position(trueX, trueY))) {
+	private boolean inList(Position origin, Position pos, ArrayList<Position> list){
+		if(pos.equals(origin)) {
 			return true;
 		}
 		
@@ -378,14 +435,14 @@ public class DummyLocalizer implements EstimatorInterface {
 		return false;
 	}
 	
-	private ArrayList<Position> n_Ls2(ArrayList<Position> neighbours) {
+	private ArrayList<Position> n_Ls2(Position origin, ArrayList<Position> neighbours) {
 		ArrayList<Position> neighbours_L2 = new ArrayList<Position>();
 
 		for(Position pos: neighbours) {
 			List<Position> current = getNeighbours(pos);
 			
 			for(Position element : current) {
-				if(!inList(element, neighbours) && !inList(element, neighbours_L2)) {
+				if(!inList(origin, element, neighbours) && !inList(origin, element, neighbours_L2) && !origin.equals(element)) {
 					neighbours_L2.add(element);
 				}
 			}
@@ -395,44 +452,122 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 
 	public int[] getCurrentReading() {
+		/*
+		sensorXY = new int[]{trueX, trueY};
+		
+		return sensorXY;
+		*/
+		
 		Random rand = new Random();
 		double probability = rand.nextDouble();
 		
 		ArrayList<Position> neighbours = n_Ls();
-		List<Position> neighbours_L2 = n_Ls2(neighbours);
+		List<Position> neighbours_L2 = n_Ls2(new Position(trueX, trueY), neighbours);
 
 		double n_Ls1 = neighbours.size() * 0.05;
 		double n_Ls2 = neighbours_L2.size() * 0.025;
 		
 		if(probability < 0.1) {
-			return new int[]{trueX, trueY};
+			sensorXY = new int[]{trueX, trueY};
 		}
 		
 		else if(probability >= 0.1 && probability < 0.1 + n_Ls1) {
 			int pos = rand.nextInt(neighbours.size());
 			
-			return new int[]{neighbours.get(pos).x, neighbours.get(pos).y};
+			sensorXY = new int[]{neighbours.get(pos).x, neighbours.get(pos).y};
 		}
 		
 		else if(probability >= 0.1 + n_Ls1 && probability < 0.1 + n_Ls1 + n_Ls2) {
 			int pos = rand.nextInt(neighbours_L2.size());
 			
-			return new int[]{neighbours_L2.get(pos).x, neighbours_L2.get(pos).y};
+			sensorXY = new int[]{neighbours_L2.get(pos).x, neighbours_L2.get(pos).y};
 		}
 		
 		else {
 			return null;
 		}
+		
+		return sensorXY;
+		
 	}
 
 	public double getCurrentProb(int x, int y) {
-		double ret = 0.0;
+		int index = stateMapping.indexOf(new State(x, y, LEFT));
 		
-		return ret;
+		double sum = forward[index++];
+		sum += forward[index++];
+		sum += forward[index++];
+		sum += forward[index++];
+		
+		return sum;
 	}
+	
+	private void forwardAlgorithm() {
+		int evidence;
+		if(sensorXY == null) {
+			evidence = 16;
+		}
+		else{
+			int x = sensorXY[0];
+			int y = sensorXY[1];
+			
+			evidence = stateMapping.indexOf(new State(x,y,LEFT))/4;
+		}
+		double[][] O_t1 = matrixO[evidence];
+		double[][] resultOT = multiplyMatrix(O_t1, tTranspose);
+		forward = multiplyMatrixVector(resultOT, forward);
+		normalizeForward();
+	}
+	
+	private void normalizeForward(){
+		double sum = 0;
+		
+		for(int i = 0; i < states; i++){
+			sum += forward[i];
+		}
+		
+		for(int i = 0; i < states; i++){
+			forward[i] /= sum;
+		}
+	}
+	
+	private double[][] transposeMatrix(double [][] m){
+        double[][] temp = new double[m[0].length][m.length];
+        for (int i = 0; i < m.length; i++)
+            for (int j = 0; j < m[0].length; j++)
+                temp[j][i] = m[i][j];
+        return temp;
+    }
+    
+	private double[] multiplyMatrixVector(double[][] a, double[] x) {
+        int m = a.length;
+        int n = a[0].length;
+        if (x.length != n) throw new RuntimeException("Illegal matrix dimensions.");
+        double[] y = new double[m];
+        for (int i = 0; i < m; i++)
+            for (int j = 0; j < n; j++)
+                y[i] += a[i][j] * x[j];
+        return y;
+    }
+    
+	private double[][] multiplyMatrix(double[][] a, double[][] b) {
+        int m1 = a.length;
+        int n1 = a[0].length;
+        int m2 = b.length;
+        int n2 = b[0].length;
+        if (n1 != m2) throw new RuntimeException("Illegal matrix dimensions.");
+        double[][] c = new double[m1][n2];
+        for (int i = 0; i < m1; i++)
+            for (int j = 0; j < n2; j++)
+                for (int k = 0; k < n1; k++)
+                    c[i][j] += a[i][k] * b[k][j];
+        return c;
+    }
 	
 	public void update() {
 		move();
+		
+		forwardAlgorithm();
 	}
 	
 	public class Position implements Comparable<Position> {
