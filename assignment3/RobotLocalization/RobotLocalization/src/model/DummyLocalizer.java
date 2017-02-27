@@ -11,7 +11,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	private int heading;
 	static final int LEFT = 0, DOWN = 1, RIGHT = 2, UP = 3;
 	private double[][] matrixO, matrixT;
-	private State[] stateMapping;
+	private ArrayList<State> stateMapping;
 	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -25,53 +25,61 @@ public class DummyLocalizer implements EstimatorInterface {
 		matrixO = new double[states][states];
 		matrixT = new double[states][states];
 		
-		stateMapping = new State[states];
+		stateMapping = new ArrayList<State>();
+		buildStateVector();
+		initiateMatrixT();
 		
 	}
 	
+	
+	
 	private void buildStateVector() {
+		for(int i = 0; i < cols; i++){ 			//X
+			for(int j = 0; j < rows; j++){ 		//Y
+				for(int h = 0; h < head; h++){ 	//Heading
+					stateMapping.add(new State(i,j,h));
+				}
+			}
+		}
+	}
+	
+	private boolean getCross(){
+		return false;
 		
 	}
 	
 	private void initiateMatrixT(){
 		for(int i = 0; i < states; i++){
 			for(int j = 0; j < states; j++){
-				//State 0 = 0,0,3. State 1 = 0,0,2, State 2 = 0,0,1, State 3 = 0,0,0, State 4 = 1,0,3 (x,y,heading)
+				//State 0 = 0,0,0. State 1 = 0,0,1, State 2 = 0,0,2, State 3 = 0,0,3, State 4 = 1,0,0 (x,y,heading)
 				//Position pos = new Position(i,j);
+				
 				if(i == j){
 					matrixT[i][j] = 0;
 					continue;
 				}
 				
+				State from = stateMapping.get(i);
+				State to = stateMapping.get(j);
 				
-				if(encounterWall(pos)){
+				Position posFrom = new Position(from.getX(), from.getY());
+				Position posTo = new Position(to.getX(), to.getY());
+				
+				List<Position> fromNeighbours = getNeighbours(posFrom);
+				
+				if(!fromNeighbours.contains(posTo)){
+					matrixT[i][j] = 0;
+					continue;
+				}
+						
+				if(encounterWall(posFrom, from.getHeading())){
 					
 				}
 			}
 		}
 	}
 	
-	/*private void initiateMatrixT(int x, int y) {
-		matrixT[LEFT][x - 1][y] = 0;
-		matrixT[RIGHT][x - 1][y] = 1/(double)12;
-		matrixT[UP][x - 1][y] = 1/(double)12;
-		matrixT[DOWN][x - 1][y] = 1/(double)12;
-		
-		matrixT[LEFT][x][y - 1] = 1/(double)12;
-		matrixT[RIGHT][x][y - 1] = 1/(double)12;
-		matrixT[UP][x][y - 1] = 0;
-		matrixT[DOWN][x][y - 1] = 1/(double)12;
-		
-		matrixT[LEFT][x + 1][y] = 0.025;
-		matrixT[RIGHT][x + 1][y] = 0.175;
-		matrixT[UP][x + 1][y] = 0.025;
-		matrixT[DOWN][x + 1][y] = 0.025;
-		
-		matrixT[LEFT][x][y + 1] = 0.025;
-		matrixT[RIGHT][x][y + 1] = 0.025;
-		matrixT[UP][x][y + 1] = 0.025;
-		matrixT[DOWN][x][y + 1] = 0.175;
-	}*/
+
 	
 	public int getNumRows() {
 		return rows;
@@ -90,10 +98,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		return 0.1;
 		//return 0;
 	}
-	
-	private void buildMatrixT() {
-		
-	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
 		return 0.1337;
@@ -108,6 +112,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	private void move(int direction) {
+		setNewHeading();
 		switch(direction) {
 		case UP: trueY--;
 			break;
@@ -121,7 +126,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		case RIGHT: trueX++;
 			break;
 		}
-		setNewHeading();
+		
 	}
 	
 	private boolean illegalPosition(Position pos) {
@@ -220,18 +225,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		return getNeighbours(new Position(trueX, trueY));
 	}
 	
-	private List<Position> getNeighboursAtDist(int dist, Position loc) {
-		List<Position> points = new ArrayList<Position>();
-		for (int i = loc.x - dist; i <= loc.x + dist; i++) {
-			for (int j = loc.y - dist; j <= loc.y + dist; j++) {
-				Position pos = new Position(i, j);
-				if (Math.max(i, j) == dist && !illegalPosition(pos)) {
-					points.add(pos);
-				}
-			}
-		}
-		return points;
-	}
 	
 	private boolean inList(Position pos, ArrayList<Position> list){
 		if(pos.equals(new Position(trueX, trueY))){
