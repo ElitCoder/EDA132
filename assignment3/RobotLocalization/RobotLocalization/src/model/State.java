@@ -8,13 +8,36 @@ public class State {
 		this.col = col;
 		this.heading = heading;
 	}
+	
 	public int getX(){
 		return row;
 	}
+	
 	public int getY(){
 		return col;
 	}
+	
 	public int getHeading(){
 		return heading;
+	}
+
+	/*
+	@Override
+	public int compareTo(Object o) {
+		State state = (State)o;
+		
+		if(state.row == this.row && state.col == this.col && state.heading == this.heading) {
+			return 0;
+		}
+		
+		return 1;
+	}
+	*/
+	
+	@Override
+	public boolean equals(Object o) {
+		State state = (State)o;
+		
+		return state.row == this.row && state.col == this.col && state.heading == this.heading;
 	}
 }
