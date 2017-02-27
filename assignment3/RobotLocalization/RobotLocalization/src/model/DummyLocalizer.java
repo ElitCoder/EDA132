@@ -11,7 +11,8 @@ public class DummyLocalizer implements EstimatorInterface {
 	private State currentState;
 	private int rows, cols, head, trueX, trueY, states, heading;
 	
-	private double[][] matrixO, matrixT;
+	private double[][] matrixT;
+	private double[][][] matrixO;
 	private ArrayList<State> stateMapping;
 	
 	public DummyLocalizer( int rows, int cols, int head) {
@@ -23,12 +24,35 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.heading = (new Random()).nextInt(4);
 		this.states = head * cols * rows;
 				
-		matrixO = new double[states][states];
+		matrixO = new double[(cols * rows) + 1][states][states];
 		matrixT = new double[states][states];
 		stateMapping = new ArrayList<State>();
 		
 		buildStateVector();
 		initiateMatrixT();
+		initiateMatrixO();
+	}
+	
+	private void initiateMatrixO() {
+		//Case: 'nothing'
+		for(int state = 0; state < states; state++){
+			State currState = stateMapping.get(state);
+			Position posState = new Position(currState.getX(), currState.getY());
+			
+			ArrayList<Position> n_Ls = getNeighbours(posState);
+			ArrayList<Position> n_Ls2 = n_Ls2(n_Ls);
+			
+			matrixO[0][state][state] = 1 - 0.1 - (n_Ls.size() * 0.05) - (n_Ls2.size() * 0.025);
+		}
+
+		for(int evidence = 1; evidence < (rows*cols) + 1; evidence++) {
+			for(int state = 0; state < states; state++){
+				
+				if(evidence == state){
+					matrixO[evidence][state][state] = 0.1;
+				}
+			}
+		}
 	}
 	
 	private void buildStateVector() {
@@ -111,7 +135,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		for(int i = 0; i < states; i++){
 			for(int j = 0; j < states; j++){
 				//State 0 = 0,0,0. State 1 = 0,0,1, State 2 = 0,0,2, State 3 = 0,0,3, State 4 = 1,0,0 (x,y,heading)
-				//Position pos = new Position(i,j);
 				
 				if(i == j){
 					matrixT[i][j] = 0;
@@ -222,10 +245,12 @@ public class DummyLocalizer implements EstimatorInterface {
 		*/
 	}
 	
-	private void move(int direction) {
+	private void move() {
 		setNewHeading();
 		
-		switch(direction) {
+		System.out.println("Heading: " + heading);
+
+		switch(heading) {
 		case UP: trueY--;
 			break;
 			
@@ -238,6 +263,8 @@ public class DummyLocalizer implements EstimatorInterface {
 		case RIGHT: trueX++;
 			break;
 		}
+		
+		System.out.println("X: " + trueX + " Y: " + trueY);
 	}
 	
 	private boolean illegalPosition(Position pos) {
@@ -405,7 +432,7 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	public void update() {
-		move(heading);
+		move();
 	}
 	
 	public class Position implements Comparable<Position> {
