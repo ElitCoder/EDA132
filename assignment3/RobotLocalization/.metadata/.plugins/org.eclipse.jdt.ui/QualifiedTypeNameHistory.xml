@@ -2,4 +2,5 @@
 <qualifiedTypeNameHistroy>
 <fullyQualifiedTypeName name="model.State"/>
 <fullyQualifiedTypeName name="java.util.Arrays"/>
+<fullyQualifiedTypeName name="model.DummyLocalizer"/>
 </qualifiedTypeNameHistroy>

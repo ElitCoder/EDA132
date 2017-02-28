@@ -66,7 +66,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		//P(e_t | x_t)
 		for(int evidence = 0; evidence < rows * cols; evidence++) {
 			Position evidencePos = new Position(evidence/4, evidence%4);
-			System.out.println("Evidence: " + evidence + ", pos: (" + evidencePos.x + ", " + evidencePos.y + ")");
 			for(int state = 0; state < states; state++){
 				if(ifSameState(evidence, state)){
 					matrixO[evidence][state][state] = 0.1;
@@ -290,8 +289,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		int stateIndex = stateMapping.indexOf(nothing);
 		
 		if(rX == -1 || rY == -1) {
-			System.out.println("In the void of anus.");
-			
 			return matrixO[16][stateIndex][stateIndex] * 4;
 		}
 				
@@ -305,8 +302,6 @@ public class DummyLocalizer implements EstimatorInterface {
 	private void move() {
 		setNewHeading();
 		
-		System.out.println("Heading: " + heading);
-
 		switch(heading) {
 		case UP: trueY--;
 			break;
@@ -320,8 +315,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		case RIGHT: trueX++;
 			break;
 		}
-		
-		System.out.println("X: " + trueX + " Y: " + trueY);
 	}
 	
 	private boolean illegalPosition(Position pos) {
@@ -452,12 +445,6 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 
 	public int[] getCurrentReading() {
-		/*
-		sensorXY = new int[]{trueX, trueY};
-		
-		return sensorXY;
-		*/
-		
 		Random rand = new Random();
 		double probability = rand.nextDouble();
 		
@@ -531,6 +518,9 @@ public class DummyLocalizer implements EstimatorInterface {
 		}
 	}
 	
+	/*
+	 * Matrix operations taken from Princeton at http://introcs.cs.princeton.edu/java/22library/Matrix.java.html
+	 */
 	private double[][] transposeMatrix(double [][] m){
         double[][] temp = new double[m[0].length][m.length];
         for (int i = 0; i < m.length; i++)
@@ -563,6 +553,13 @@ public class DummyLocalizer implements EstimatorInterface {
                     c[i][j] += a[i][k] * b[k][j];
         return c;
     }
+	
+	public void printManhattanDistance(int maxX, int maxY) {
+		int distance = Math.abs(trueX - maxX) + Math.abs(trueY - maxY);
+		
+		System.out.println("True position: (" + trueX + ", " + trueY + ") Guess: (" + maxX + ", " + maxY + ")");
+		System.out.println("Manhattan distance: " + distance + " steps");
+	}
 	
 	public void update() {
 		move();
