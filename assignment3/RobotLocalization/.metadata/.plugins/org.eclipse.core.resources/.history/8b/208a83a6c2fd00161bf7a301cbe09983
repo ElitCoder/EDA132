@@ -1,0 +1,43 @@
+package model;
+
+public class State {
+	private int row, col, heading;
+	
+	public State(int col, int row, int heading){
+		this.row = row;
+		this.col = col;
+		this.heading = heading;
+	}
+	
+	public int getX(){
+		return col;
+	}
+	
+	public int getY(){
+		return row;
+	}
+	
+	public int getHeading(){
+		return heading;
+	}
+
+	/*
+	@Override
+	public int compareTo(Object o) {
+		State state = (State)o;
+		
+		if(state.row == this.row && state.col == this.col && state.heading == this.heading) {
+			return 0;
+		}
+		
+		return 1;
+	}
+	*/
+	
+	@Override
+	public boolean equals(Object o) {
+		State state = (State)o;
+		
+		return state.row == this.row && state.col == this.col && state.heading == this.heading;
+	}
+}

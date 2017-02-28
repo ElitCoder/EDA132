@@ -17,9 +17,12 @@ public class DummyLocalizer implements EstimatorInterface {
 	private double[][][] matrixO;
 	private ArrayList<State> stateMapping;
 	private double[][] tTranspose;
+	private int nothingPosition;
 	
-	private int sumError, nbrIterations;
+	private int sumError, nbrIterations, currentIteration;
 	private double resultingError;
+	private ArrayList<Position> positionMapping;
+	private int correctGuesses;
 	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -32,12 +35,23 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		this.sumError = 0;
 		this.resultingError = 0.0;
-		this.nbrIterations = 10000;
+		this.currentIteration = 0;
+		this.nbrIterations = 2000;
+		
+		this.correctGuesses = 0;
 				
+		nothingPosition = (cols * rows);
 		forward = new double[states];
-		matrixO = new double[(cols * rows) + 1][states][states];
+		matrixO = new double[nothingPosition + 1][states][states];
 		matrixT = new double[states][states];
 		stateMapping = new ArrayList<State>();
+		positionMapping = new ArrayList<Position>();
+		
+		for(int i = 0; i < rows; i++){
+			for(int j = 0; j < cols; j++){
+				positionMapping.add(new Position(i,j));
+			}
+		}
 
 		buildStateVector();
 		initiateMatrixT();
@@ -65,14 +79,17 @@ public class DummyLocalizer implements EstimatorInterface {
 			ArrayList<Position> n_Ls = getNeighbours(posState);
 			ArrayList<Position> n_Ls2 = n_Ls2(posState, n_Ls);
 			
-			matrixO[16][state][state] = 1 - 0.1 - (n_Ls.size() * 0.05) - (n_Ls2.size() * 0.025);
+			matrixO[nothingPosition][state][state] = 1 - 0.1 - (n_Ls.size() * 0.05) - (n_Ls2.size() * 0.025);
 		}
 		
-		normalizeMatrix(matrixO[16]);
+		normalizeMatrix(matrixO[nothingPosition]);
 
 		//P(e_t | x_t)
 		for(int evidence = 0; evidence < rows * cols; evidence++) {
-			Position evidencePos = new Position(evidence/4, evidence%4);
+			//Position evidencePos = new Position(evidence/cols, evidence%rows);
+			Position evidencePos = positionMapping.get(evidence);
+			//Position evidencePos = new Position(evidence / rows, evidence % cols);
+			
 			for(int state = 0; state < states; state++){
 				if(ifSameState(evidence, state)){
 					matrixO[evidence][state][state] = 0.1;
@@ -119,8 +136,8 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 	
 	private void buildStateVector() {
-		for(int i = 0; i < cols; i++) {
-			for(int j = 0; j < rows; j++) { 
+		for(int i = 0; i < rows; i++) {
+			for(int j = 0; j < cols; j++) { 
 				for(int h = 0; h < head; h++) {
 					stateMapping.add(new State(i, j, h));
 				}
@@ -158,7 +175,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		int x = pos.x;
 		int y = pos.y;
 		
-		return (x == 0 || x == cols - 1) && (y == 0 || y == rows - 1);
+		return (x == 0 || x == rows - 1) && (y == 0 || y == cols - 1);
 	}
 	
 	private boolean validStateTransition(State from, State to) {
@@ -191,7 +208,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		int x = pos.x;
 		int y = pos.y;
 		
-		return x == 0 || x == cols - 1 || y == 0 || y == rows - 1;
+		return x == 0 || x == rows - 1 || y == 0 || y == cols - 1;
 	}
 	
 	private void initiateMatrixT(){
@@ -290,13 +307,13 @@ public class DummyLocalizer implements EstimatorInterface {
 	}
 
 	public double getOrXY( int rX, int rY, int x, int y) {
-		int index = rX * 4 + rY;
+		int index = positionMapping.indexOf(new Position(rX,rY));//rX * rows + rY;
 		
 		State nothing = new State(x, y, UP);
 		int stateIndex = stateMapping.indexOf(nothing);
 		
 		if(rX == -1 || rY == -1) {
-			return matrixO[16][stateIndex][stateIndex] * 4;
+			return matrixO[nothingPosition][stateIndex][stateIndex] * 4;
 		}
 				
 		return matrixO[index][stateIndex][stateIndex] * 4;
@@ -328,7 +345,7 @@ public class DummyLocalizer implements EstimatorInterface {
 		int x = pos.x;
 		int y = pos.y;
 		
-		return x < 0 || x > cols - 1 || y < 0 || y > rows - 1;
+		return x < 0 || x > rows - 1 || y < 0 || y > cols - 1;
 	}
 	
 	private ArrayList<Position> getNeighbours(Position pos) {
@@ -363,7 +380,7 @@ public class DummyLocalizer implements EstimatorInterface {
 			break;
 			
 		case DOWN:
-			if(y == rows - 1) {
+			if(y == cols - 1) {
 				return true;
 			}
 			break;
@@ -375,7 +392,7 @@ public class DummyLocalizer implements EstimatorInterface {
 			break;
 
 		case RIGHT:
-			if(x == cols - 1) {
+			if(x == rows - 1) {
 				return true;
 			}
 			break;
@@ -481,12 +498,14 @@ public class DummyLocalizer implements EstimatorInterface {
 			return null;
 		}
 		
+		//CHANGED
 		return sensorXY;
-		
+		//return new int[]{sensorXY[1], sensorXY[0]};
 	}
 
 	public double getCurrentProb(int x, int y) {
 		int index = stateMapping.indexOf(new State(x, y, LEFT));
+		//int index = positionMapping.indexOf(new Position(x, y));
 		
 		double sum = forward[index++];
 		sum += forward[index++];
@@ -499,18 +518,30 @@ public class DummyLocalizer implements EstimatorInterface {
 	private void forwardAlgorithm() {
 		int evidence;
 		if(sensorXY == null) {
-			evidence = 16;
+			evidence = nothingPosition;
 		}
 		else{
+			//CHANGED
 			int x = sensorXY[0];
 			int y = sensorXY[1];
 			
-			evidence = stateMapping.indexOf(new State(x,y,LEFT))/4;
+			//evidence = stateMapping.indexOf(new State(x,y,LEFT))/cols;
+			evidence = positionMapping.indexOf(new Position(x, y));
 		}
 		double[][] O_t1 = matrixO[evidence];
 		double[][] resultOT = multiplyMatrix(O_t1, tTranspose);
 		forward = multiplyMatrixVector(resultOT, forward);
 		normalizeForward();
+		
+		/*
+		System.out.println("Forward vector: ");
+		
+		for(double element : forward) {
+			System.out.print(element + " ");
+		}
+		
+		System.out.println("");
+		*/
 	}
 	
 	private void normalizeForward(){
@@ -563,17 +594,17 @@ public class DummyLocalizer implements EstimatorInterface {
 	
 	public void printManhattanDistance(int maxX, int maxY) {
 		int distance = Math.abs(trueX - maxX) + Math.abs(trueY - maxY);
-		
-		System.out.println("True position: (" + trueX + ", " + trueY + ") Guess: (" + maxX + ", " + maxY + ")");
-		System.out.println("Manhattan distance: " + distance + " steps");
-		
-		if(nbrIterations > 0) {
+	
+		if(currentIteration < nbrIterations) {
 			sumError += distance;
 			
-			if(--nbrIterations == 0) {
-				resultingError = (double)sumError / 10000;
+			correctGuesses += distance == 0 ? 1 : 0;
+			
+			if(++currentIteration == nbrIterations) {
+				resultingError = (double)sumError / nbrIterations;
 				
 				System.out.println("Finished resulting error, value: " + resultingError + " with " + nbrIterations + " steps.");
+				System.out.println("Correct guesses: " + correctGuesses + " gives probability: " + (double)correctGuesses / (nbrIterations / (double)100) + "%");
 			}
 		}
 	}
