@@ -18,6 +18,9 @@ public class DummyLocalizer implements EstimatorInterface {
 	private ArrayList<State> stateMapping;
 	private double[][] tTranspose;
 	
+	private int sumError, nbrIterations;
+	private double resultingError;
+	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
 		this.cols = cols;
@@ -26,6 +29,10 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.trueY = 1;
 		this.heading = (new Random()).nextInt(4);
 		this.states = head * cols * rows;
+		
+		this.sumError = 0;
+		this.resultingError = 0.0;
+		this.nbrIterations = 10000;
 				
 		forward = new double[states];
 		matrixO = new double[(cols * rows) + 1][states][states];
@@ -559,6 +566,16 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		System.out.println("True position: (" + trueX + ", " + trueY + ") Guess: (" + maxX + ", " + maxY + ")");
 		System.out.println("Manhattan distance: " + distance + " steps");
+		
+		if(nbrIterations > 0) {
+			sumError += distance;
+			
+			if(--nbrIterations == 0) {
+				resultingError = (double)sumError / 10000;
+				
+				System.out.println("Finished resulting error, value: " + resultingError + " with " + nbrIterations + " steps.");
+			}
+		}
 	}
 	
 	public void update() {

@@ -24,6 +24,7 @@ public class Main {
 		 * you can only click through your localisation stepwise
 		 */
 		new LocalizationDriver( 500, viewer).start();
+		//new LocalizationDriver(0, viewer).start();
 		
 	}
 }	
