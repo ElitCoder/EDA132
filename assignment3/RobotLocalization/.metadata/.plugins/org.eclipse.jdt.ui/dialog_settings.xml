@@ -1,5 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
+	<section name="FatJarPackageWizard">
+		<item value="/h/d6/m/dat13nca/EDA132/assignment3/RobotLocalization" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
+		<item value="Main - RobotLocalization" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="/h/d6/m/dat13nca/EDA132/assignment3/RobotLocalization.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
+		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
+		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>
+		<list key="FatJarPackageWizardPage.DESTINATION_NAMES_ID">
+			<item value="/h/d6/m/dat13nca/EDA132/assignment3/RobotLocalization.jar"/>
+			<item value="/h/d6/m/dat13nca/EDA132/assignment3/Main.jar"/>
+		</list>
+		<list key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION_HISTORY">
+			<item value="/h/d6/m/dat13nca/EDA132/assignment3/RobotLocalization.xml"/>
+			<item value=".xml"/>
+		</list>
+	</section>
 	<section name="org.eclipse.jdt.internal.ui.packageview.PackageExplorerPart">
 		<item value="2" key="layout"/>
 		<item value="true" key="group_libraries"/>
