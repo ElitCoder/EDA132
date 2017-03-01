@@ -23,6 +23,12 @@ public class DummyLocalizer implements EstimatorInterface {
 	private double resultingError;
 	private ArrayList<Position> positionMapping;
 	private int correctGuesses;
+	private ArrayList<Double> prob;
+	private ArrayList<Double> guesses;	
+	private ArrayList<Double> sensorProb;
+	private ArrayList<Double> sensorGuesses;
+	private double sumSensorError, correctSensor;
+
 	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -33,6 +39,8 @@ public class DummyLocalizer implements EstimatorInterface {
 		this.heading = (new Random()).nextInt(4);
 		this.states = head * cols * rows;
 		
+		this.sumSensorError = 0.0;
+		this.correctSensor = 0.0;
 		this.sumError = 0;
 		this.resultingError = 0.0;
 		this.currentIteration = 0;
@@ -59,6 +67,10 @@ public class DummyLocalizer implements EstimatorInterface {
 		initateForward();
 		
 		tTranspose = transposeMatrix(matrixT);
+		this.guesses = new ArrayList<Double>();
+		this.prob = new ArrayList<Double>();
+		this.sensorGuesses = new ArrayList<Double>();
+		this.sensorProb = new ArrayList<Double>();
 	}
 	
 	private void initateForward() {
@@ -84,11 +96,8 @@ public class DummyLocalizer implements EstimatorInterface {
 		
 		normalizeMatrix(matrixO[nothingPosition]);
 
-		//P(e_t | x_t)
 		for(int evidence = 0; evidence < rows * cols; evidence++) {
-			//Position evidencePos = new Position(evidence/cols, evidence%rows);
 			Position evidencePos = positionMapping.get(evidence);
-			//Position evidencePos = new Position(evidence / rows, evidence % cols);
 			
 			for(int state = 0; state < states; state++){
 				if(ifSameState(evidence, state)){
@@ -495,17 +504,14 @@ public class DummyLocalizer implements EstimatorInterface {
 		}
 		
 		else {
-			return null;
+			sensorXY = null;
 		}
-		
-		//CHANGED
+		forwardAlgorithm();
 		return sensorXY;
-		//return new int[]{sensorXY[1], sensorXY[0]};
 	}
 
 	public double getCurrentProb(int x, int y) {
 		int index = stateMapping.indexOf(new State(x, y, LEFT));
-		//int index = positionMapping.indexOf(new Position(x, y));
 		
 		double sum = forward[index++];
 		sum += forward[index++];
@@ -521,11 +527,9 @@ public class DummyLocalizer implements EstimatorInterface {
 			evidence = nothingPosition;
 		}
 		else{
-			//CHANGED
 			int x = sensorXY[0];
 			int y = sensorXY[1];
 			
-			//evidence = stateMapping.indexOf(new State(x,y,LEFT))/cols;
 			evidence = positionMapping.indexOf(new Position(x, y));
 		}
 		double[][] O_t1 = matrixO[evidence];
@@ -533,15 +537,6 @@ public class DummyLocalizer implements EstimatorInterface {
 		forward = multiplyMatrixVector(resultOT, forward);
 		normalizeForward();
 		
-		/*
-		System.out.println("Forward vector: ");
-		
-		for(double element : forward) {
-			System.out.print(element + " ");
-		}
-		
-		System.out.println("");
-		*/
 	}
 	
 	private void normalizeForward(){
@@ -594,25 +589,58 @@ public class DummyLocalizer implements EstimatorInterface {
 	
 	public void printManhattanDistance(int maxX, int maxY) {
 		int distance = Math.abs(trueX - maxX) + Math.abs(trueY - maxY);
-	
+		int sensorDist;
+		if(sensorXY == null){
+			sensorDist = rows;
+		}else{
+			sensorDist = Math.abs(trueX - sensorXY[0]) + Math.abs(trueY - sensorXY[1]);
+		}
+		
 		if(currentIteration < nbrIterations) {
 			sumError += distance;
+			sumSensorError += sensorDist;
 			
+			correctSensor += sensorDist == 0 ? 1 : 0;
 			correctGuesses += distance == 0 ? 1 : 0;
 			
 			if(++currentIteration == nbrIterations) {
 				resultingError = (double)sumError / nbrIterations;
 				
-				System.out.println("Finished resulting error, value: " + resultingError + " with " + nbrIterations + " steps.");
-				System.out.println("Correct guesses: " + correctGuesses + " gives probability: " + (double)correctGuesses / (nbrIterations / (double)100) + "%");
+				//System.out.println("Finished resulting error, value: " + resultingError + " with " + nbrIterations + " steps.");
+				//System.out.println("Correct guesses: " + correctGuesses + " gives probability: " + (double)correctGuesses / (nbrIterations / (double)100) + "%");
+				prob.add(resultingError);
+				guesses.add((double)correctGuesses / (nbrIterations / (double)100));
+				
+				sensorProb.add((double)sumSensorError/nbrIterations);
+				sensorGuesses.add((double)correctSensor / (nbrIterations / (double)100));
+				
+				System.out.println(meanOfArray(prob));
+				System.out.println(meanOfArray(guesses));
+				System.out.println("--");
+				System.out.println(meanOfArray(sensorProb));
+				System.out.println(meanOfArray(sensorGuesses));
+				System.out.println("---------");
+				currentIteration = 0;
+				sumError = 0;
+				correctGuesses = 0;
+				sumSensorError = 0;
+				correctSensor = 0;
 			}
 		}
+	}
+	
+	private double meanOfArray(ArrayList<Double> array){
+		double sum = 0;
+		
+		for(Double d : array){
+			sum += d;
+		}
+		return sum/array.size();
 	}
 	
 	public void update() {
 		move();
 		
-		forwardAlgorithm();
 	}
 	
 	public class Position implements Comparable<Position> {

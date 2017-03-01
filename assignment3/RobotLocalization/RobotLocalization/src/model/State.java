@@ -21,19 +21,6 @@ public class State {
 		return heading;
 	}
 
-	/*
-	@Override
-	public int compareTo(Object o) {
-		State state = (State)o;
-		
-		if(state.row == this.row && state.col == this.col && state.heading == this.heading) {
-			return 0;
-		}
-		
-		return 1;
-	}
-	*/
-	
 	@Override
 	public boolean equals(Object o) {
 		State state = (State)o;
