@@ -124,7 +124,7 @@ public class DummyLocalizer implements EstimatorInterface {
 				}
 			}
 			
-			normalizeMatrix(matrixO[evidence]);
+			//normalizeMatrix(matrixO[evidence]);
 		}
 	}
 	
@@ -322,10 +322,10 @@ public class DummyLocalizer implements EstimatorInterface {
 		int stateIndex = stateMapping.indexOf(nothing);
 		
 		if(rX == -1 || rY == -1) {
-			return matrixO[nothingPosition][stateIndex][stateIndex] * 4;
+			return matrixO[nothingPosition][stateIndex][stateIndex];
 		}
 				
-		return matrixO[index][stateIndex][stateIndex] * 4;
+		return matrixO[index][stateIndex][stateIndex];
 	}
 
 	public int[] getCurrentTruePosition() {
