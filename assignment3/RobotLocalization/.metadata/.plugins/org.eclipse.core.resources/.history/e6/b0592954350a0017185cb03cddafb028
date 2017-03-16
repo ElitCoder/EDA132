@@ -596,8 +596,8 @@ public class DummyLocalizer implements EstimatorInterface {
 			sensorDist = Math.abs(trueX - sensorXY[0]) + Math.abs(trueY - sensorXY[1]);
 		}
 		
-		//System.out.println("Robot location: (" + trueX + ", " + trueY + ") Estimated location: (" + maxX + ", " + maxY + ")");
-		//System.out.println("Manhattan distance: " + distance + " steps.");
+		System.out.println("Robot location: (" + trueX + ", " + trueY + ") Estimated location: (" + maxX + ", " + maxY + ")");
+		System.out.println("Manhattan distance: " + distance + " steps.");
 		
 		if(currentIteration < nbrIterations) {
 			sumError += distance;
@@ -615,14 +615,15 @@ public class DummyLocalizer implements EstimatorInterface {
 				guesses.add((double)correctGuesses / (nbrIterations / (double)100));
 				
 				sensorProb.add((double)sumSensorError/nbrIterations);
-				
+				sensorGuesses.add((double)correctSensor / (nbrIterations / (double)100));
+				/*
 				System.out.println(meanOfArray(prob));
 				System.out.println(meanOfArray(guesses));
 				System.out.println("--");
 				System.out.println(meanOfArray(sensorProb));
 				System.out.println(meanOfArray(sensorGuesses));
 				System.out.println("---------");
-				
+				*/
 				
 				currentIteration = 0;
 				sumError = 0;
