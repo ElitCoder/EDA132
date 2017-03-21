@@ -93,7 +93,7 @@ public class DummyLocalizer implements EstimatorInterface {
 			matrixO[nothingPosition][state][state] = 1 - 0.1 - (n_Ls.size() * 0.05) - (n_Ls2.size() * 0.025);
 		}
 		
-		normalizeMatrix(matrixO[nothingPosition]);
+		//normalizeMatrix(matrixO[nothingPosition]);
 
 		for(int evidence = 0; evidence < rows * cols; evidence++) {
 			Position evidencePos = positionMapping.get(evidence);
