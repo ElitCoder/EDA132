@@ -28,7 +28,6 @@ public class DummyLocalizer implements EstimatorInterface {
 	private ArrayList<Double> sensorProb;
 	private ArrayList<Double> sensorGuesses;
 	private double sumSensorError, correctSensor;
-
 	
 	public DummyLocalizer( int rows, int cols, int head) {
 		this.rows = rows;
@@ -94,7 +93,7 @@ public class DummyLocalizer implements EstimatorInterface {
 			matrixO[nothingPosition][state][state] = 1 - 0.1 - (n_Ls.size() * 0.05) - (n_Ls2.size() * 0.025);
 		}
 		
-		//normalizeMatrix(matrixO[nothingPosition]);
+		normalizeMatrix(matrixO[nothingPosition]);
 
 		for(int evidence = 0; evidence < rows * cols; evidence++) {
 			Position evidencePos = positionMapping.get(evidence);
@@ -615,13 +614,15 @@ public class DummyLocalizer implements EstimatorInterface {
 				guesses.add((double)correctGuesses / (nbrIterations / (double)100));
 				
 				sensorProb.add((double)sumSensorError/nbrIterations);
+				sensorGuesses.add((double)correctSensor / (nbrIterations / (double)100));
 				
+				System.out.println("Current iteration (estimation vs sensor):");
 				System.out.println(meanOfArray(prob));
 				System.out.println(meanOfArray(guesses));
-				System.out.println("--");
+				System.out.println("---------------");
 				System.out.println(meanOfArray(sensorProb));
 				System.out.println(meanOfArray(sensorGuesses));
-				System.out.println("---------");
+				System.out.println("");
 				
 				
 				currentIteration = 0;
